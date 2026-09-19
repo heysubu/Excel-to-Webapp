@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ODMSLLP Consumption Manager</title>
+<style>
+:root{
+  --br:#3b1a06;--bm:#6b3010;--bl:#a0501a;--am:#d4842a;--go:#f0aa45;
+  --cr:#fdf9f4;--cd:#f3ead8;--cb:#dfd0b4;--cbl:#c8b48e;
+  --gt:#2d5c3a;--gl:#4a8060;--wh:#fff;--td:#1a0d04;--tm:#4a300c;--tl:#8a7050;
+  --blue:#1a44a0;--red:#b83020;--purple:#7030a0;
+  --sh:0 2px 12px rgba(40,20,0,.1);--sha:0 4px 20px rgba(40,20,0,.18);
+  --ra:10px;--rs:7px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cr);color:var(--td);font-size:13px;min-height:100vh}
+#loginScreen{position:fixed;inset:0;background:linear-gradient(145deg,#1a0802,#4a1a06,#8b3810);display:flex;align-items:center;justify-content:center;z-index:9999}
+.lbox{background:#fff;border-radius:16px;padding:36px 32px;width:360px;box-shadow:0 24px 60px rgba(0,0,0,.5);text-align:center}
+.lbox h1{font-size:18px;font-weight:800;color:var(--br);margin:6px 0 2px}
+.lbox p{font-size:9px;color:var(--tl);text-transform:uppercase;letter-spacing:.8px;margin-bottom:22px}
+.lf{margin-bottom:12px;text-align:left}
+.lf label{font-size:9px;font-weight:700;color:var(--tm);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.liw{display:flex;align-items:center;border:1.5px solid var(--cb);border-radius:var(--rs);background:var(--cr)}
+.liw:focus-within{border-color:var(--am);background:#fff}
+.liw span{padding:0 10px;font-size:14px;opacity:.6}
+.liw input{flex:1;padding:9px 10px 9px 0;border:none;background:transparent;font-size:13px;outline:none}
+.btnL{width:100%;padding:11px;background:linear-gradient(135deg,var(--am),var(--bl));color:#fff;border:none;border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer;margin-top:4px}
+.btnL:hover{opacity:.88}
+.lerr{background:#fde8e8;color:var(--red);padding:7px 12px;border-radius:var(--rs);font-size:10px;font-weight:600;margin-top:8px;display:none}
+.lhint{margin-top:14px;background:var(--cd);border-radius:var(--rs);padding:8px;font-size:9px;color:var(--tl);text-align:left;line-height:1.8}
+#app{display:none;min-height:100vh}
+.tnav{background:linear-gradient(135deg,var(--br),var(--bm));padding:0 14px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 16px rgba(0,0,0,.4);position:sticky;top:0;z-index:200;min-height:50px;flex-wrap:wrap}
+.nbrand{display:flex;align-items:center;gap:7px;padding:9px 0;flex-shrink:0}
+.nbrand .nlogo{font-size:18px}
+.nbrand h1{font-size:13px;font-weight:800;color:var(--go);line-height:1.1}
+.nbrand p{color:rgba(255,255,255,.5);font-size:7px;letter-spacing:.9px;text-transform:uppercase}
+.ndiv{width:1px;height:24px;background:rgba(255,255,255,.15);flex-shrink:0}
+.cosel{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:var(--rs);padding:4px 9px;flex-shrink:0}
+.cosel select{background:transparent;border:none;color:#fff;font-size:10px;font-weight:600;cursor:pointer;outline:none}
+.cosel select option{color:var(--td);background:#fff}
+.codot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ntabs{display:flex;gap:2px;flex:1;justify-content:center;flex-wrap:wrap}
+.ntab{padding:6px 11px;color:rgba(255,255,255,.7);border:none;background:none;cursor:pointer;border-radius:var(--rs);font-size:10px;font-weight:600;transition:all .2s;white-space:nowrap}
+.ntab:hover{background:rgba(255,255,255,.12);color:#fff}
+.ntab.active{background:var(--am);color:#fff}
+.nright{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.upill{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:100px;padding:4px 10px;font-size:9px;font-weight:600;display:flex;align-items:center;gap:5px}
+.rbadge{font-size:7px;padding:2px 5px;border-radius:100px;font-weight:700}
+.rb-adm{background:var(--go);color:var(--br)}.rb-stf{background:var(--gt);color:#fff}
+.nibtn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:var(--rs);padding:5px 9px;cursor:pointer;font-size:9px;display:flex;align-items:center;gap:3px;transition:.2s;white-space:nowrap}
+.nibtn:hover{background:rgba(255,255,255,.22)}
+.page{display:none;padding:14px;max-width:1800px;margin:0 auto}
+.page.active{display:block}
+.card{background:var(--wh);border-radius:var(--ra);border:1px solid var(--cb);box-shadow:var(--sh);margin-bottom:10px;overflow:hidden}
+.ch{background:linear-gradient(135deg,var(--br),var(--bm));color:#fff;padding:9px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ch h3{font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px}
+.cb{padding:12px 14px}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:7px;margin-bottom:10px}
+.kcard{background:var(--wh);border-radius:var(--ra);border:1px solid var(--cb);padding:11px 13px;box-shadow:var(--sh);position:relative;overflow:hidden}
+.kcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kca::before{background:var(--am)}.kcg::before{background:var(--gt)}.kcb::before{background:var(--bm)}
+.kco::before{background:var(--go)}.kcbl::before{background:var(--blue)}
+.ki{font-size:20px;margin-bottom:1px}.kl{font-size:7px;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:.5px}
+.kv{font-size:16px;font-weight:800;color:var(--br);margin:2px 0;line-height:1.1}.ks{font-size:8px;color:var(--tl)}
+.fbar{background:var(--wh);border:1px solid var(--cb);border-radius:var(--ra);padding:10px 13px;display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap;box-shadow:var(--sh);margin-bottom:10px}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg label{font-size:8px;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:.5px}
+select,input[type=text],input[type=number],input[type=date],input[type=password],input[type=month],input[type=color]{
+  padding:6px 9px;border:1.5px solid var(--cb);border-radius:var(--rs);
+  font-family:inherit;font-size:11px;color:var(--td);background:var(--cr);outline:none;transition:border-color .2s}
+select:focus,input:focus{border-color:var(--am);background:#fff}
+textarea{padding:7px 9px;border:1.5px solid var(--cb);border-radius:var(--rs);font-family:inherit;font-size:11px;color:var(--td);background:var(--cr);outline:none;resize:vertical}
+.btn{padding:7px 13px;border:none;border-radius:var(--rs);font-family:inherit;font-weight:700;font-size:10px;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:4px}
+.bprim{background:var(--am);color:#fff}.bprim:hover{background:var(--bl)}
+.bsucc{background:var(--gt);color:#fff}.bdngr{background:var(--red);color:#fff}
+.bout{background:transparent;border:1.5px solid var(--am);color:var(--am)}.bout:hover{background:var(--am);color:#fff}
+.bblue{background:var(--blue);color:#fff}.bpurp{background:var(--purple);color:#fff}
+.bghst{background:var(--cd);color:var(--tm)}
+.bsm{padding:3px 8px;font-size:8px}
+.badge{display:inline-block;padding:2px 6px;border-radius:100px;font-size:8px;font-weight:700}
+.ba{background:#fff3cd;color:#856404}.bg{background:#d4edda;color:#155724}
+.bb{background:var(--cd);color:var(--bm)}.bc{background:#e8f0fa;color:#1a5276}
+.bp{background:#f0e8fa;color:#5a1a8a}.br{background:#fce8e8;color:#a93226}
+.stbl{width:100%;border-collapse:collapse;font-size:10px}
+.stbl th{background:linear-gradient(135deg,var(--br),var(--bm));color:#fff;padding:6px 9px;text-align:center;font-weight:700;font-size:9px}
+.stbl th:first-child{text-align:left}
+.stbl td{padding:5px 9px;border-bottom:1px solid var(--cd);text-align:center;vertical-align:middle}
+.stbl td:first-child{text-align:left}
+.stbl tr:hover{background:#fffcf7}
+.stbl tfoot td{background:var(--cd);font-weight:700;border-top:2px solid var(--cbl)}
+#regWrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--rs);border:1px solid var(--cb)}
+.rtbl{border-collapse:collapse;font-size:10px;white-space:nowrap}
+.rtbl th,.rtbl td{border:1px solid #e0d0b0;padding:0}
+.rtbl .h1 th{background:linear-gradient(135deg,var(--br),var(--bm));color:#fff;padding:5px 7px;font-size:9px;font-weight:700;text-align:center}
+.rtbl .h1 th:first-child{text-align:left;min-width:160px}
+.rtbl .h2 th{background:#4a2010;color:#fde8c0;padding:3px 5px;font-size:7px;font-weight:600;text-align:center}
+.rtbl tbody td{text-align:center;vertical-align:middle;height:30px}
+.rtbl tbody td.tl{text-align:left;padding:4px 7px;min-width:160px}
+.rtbl tbody tr:hover{background:#fffbf5}
+.rtbl tfoot td{background:var(--cd);font-weight:700;padding:5px 7px;font-size:9px;text-align:center;border-top:2px solid var(--bl)}
+.rtbl tfoot td:first-child{text-align:left}
+.dc-day{min-width:44px;cursor:cell;text-align:center}
+.dc-mo{min-width:70px}
+.dc-rt{min-width:56px;background:#fef9f0}
+.dc-open{min-width:72px;background:#f0f4ff;color:#1a3a8a;font-weight:600}
+.dc-ord{min-width:60px;background:#fff8ec;color:#8a4000}
+.dc-tot{min-width:64px;background:#e8f5e9;font-weight:700}
+.dc-use{min-width:64px;background:#e8f5e9;font-weight:700;color:#2d5c3a}
+.dc-cls{min-width:64px;background:#e8f0fa;font-weight:700;color:#1a4080}
+.dc-amt{min-width:76px;background:#fff3e0;font-size:9px}
+.dc-sat{background:#dbeafe!important}.dc-sun{background:#fce7e7!important}
+.dc-satH{background:#1e40af!important;color:#fff!important}.dc-sunH{background:#991b1b!important;color:#fff!important}
+.dci{width:100%;height:28px;border:none;background:transparent;text-align:center;font-size:11px;font-weight:500;color:var(--td);outline:none;-moz-appearance:textfield}
+.dci::-webkit-outer-spin-button,.dci::-webkit-inner-spin-button{-webkit-appearance:none}
+.dci:focus{background:#fffbe6}
+.mac{width:100%;height:28px;border:none;background:transparent;text-align:center;font-size:10px;font-weight:700;cursor:pointer;color:var(--td)}
+.mac-P{color:#155724;background:#d4edda}.mac-A{color:#721c24;background:#f8d7da}
+.mac-H{color:#0c5460;background:#d1ecf1}.mac-WO{color:#856404;background:#fff3cd}
+.elci{width:100%;height:28px;padding:0 3px;border:none;background:transparent;text-align:center;font-size:10px;color:var(--td);outline:none;-moz-appearance:textfield}
+.elci::-webkit-outer-spin-button,.elci::-webkit-inner-spin-button{-webkit-appearance:none}
+.elci:focus{background:#fffbe6}
+.ele-open{background:#e8f0ff!important;color:#1a3a8a;font-weight:700}
+.ele-cls{background:#e8ffe8!important;color:#155724;font-weight:700}
+.ele-con{background:#fff3cd!important;color:#856404;font-weight:700}
+.ele-amt{background:#fff8ec!important;font-size:9px;color:#6b3000}
+.mtbar{display:flex;gap:2px;margin-bottom:10px;border-bottom:2px solid var(--cb);flex-wrap:wrap}
+.mtab{padding:6px 12px;border:none;background:none;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;color:var(--tl);border-radius:var(--rs) var(--rs) 0 0;transition:.2s}
+.mtab.active{background:var(--am);color:#fff}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+.fg4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:9px}
+.fgrp{display:flex;flex-direction:column;gap:4px}
+.fgrp label{font-size:8px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px}
+.fgrp input,.fgrp select,.fgrp textarea{width:100%}
+.alert{padding:7px 11px;border-radius:var(--rs);font-size:10px;font-weight:500;margin-bottom:8px;display:flex;align-items:flex-start;gap:5px}
+.ai{background:#e8f0fa;border:1px solid #b8d0f0;color:#1a4a8a}
+.aw{background:#fff3cd;border:1px solid #ffc107;color:#6d5400}
+.as{background:#d4edda;border:1px solid #c3e6cb;color:#155724}
+.cocard{background:var(--wh);border:1px solid var(--cb);border-radius:var(--ra);padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:9px}
+.cocard:hover{box-shadow:var(--sha);border-color:var(--am)}
+.cchips{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}
+.cchip{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:100px;font-size:8px;font-weight:600;border:1px solid;cursor:pointer;transition:.2s;user-select:none}
+.cchip:hover{transform:scale(1.05)}
+.cchip-on{background:var(--gt);border-color:var(--gt);color:#fff}
+.cchip-off{background:var(--cd);border-color:var(--cb);color:var(--tl)}
+.mchip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:var(--cd);border:1px solid var(--cb);border-radius:100px;font-size:10px;color:var(--bm);font-weight:600;margin:2px}
+.mchip button{background:none;border:none;cursor:pointer;color:var(--red);font-size:13px;line-height:1;padding:0 1px}
+.smtbl{width:100%;border-collapse:collapse;font-size:10px}
+.smtbl th{background:linear-gradient(135deg,var(--br),var(--bm));color:#fff;padding:5px 9px;font-weight:700;font-size:9px}
+.smtbl th:first-child{text-align:left}
+.smtbl td{padding:5px 9px;border-bottom:1px solid var(--cd);text-align:center;font-size:9px;vertical-align:middle}
+.smtbl td:first-child,.smtbl td:nth-child(2){text-align:left}
+.smtbl tr:hover{background:#fffcf7}
+.smtbl tfoot td{background:var(--cd);font-weight:700;border-top:2px solid var(--cbl)}
+.pchip{padding:3px 9px;border-radius:100px;font-size:8px;font-weight:700;cursor:pointer;border:1.5px solid;transition:.2s;user-select:none}
+.pc-on{background:var(--gt);border-color:var(--gt);color:#fff}
+.pc-off{background:transparent;border-color:var(--cb);color:var(--tl)}
+.scsec{background:var(--cr);border:1px solid var(--cb);border-radius:var(--ra);padding:12px;margin-bottom:9px}
+.scsec h4{font-size:11px;font-weight:700;color:var(--br);margin-bottom:7px}
+#popOv{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:8000;align-items:center;justify-content:center}
+#popOv.show{display:flex}
+#popBox{background:#fff;border-radius:14px;padding:26px 28px;max-width:380px;width:92%;text-align:center;box-shadow:var(--sha)}
+#popIcon{font-size:36px;margin-bottom:6px}#popTitle{font-size:15px;font-weight:800;color:var(--br);margin-bottom:4px}
+#popMsg{font-size:11px;color:var(--tm);margin-bottom:16px;line-height:1.6}
+.popbtns{display:flex;gap:7px;justify-content:center}
+#popOk{padding:8px 24px;background:var(--am);color:#fff;border:none;border-radius:var(--rs);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer}
+#popCan{padding:8px 18px;background:var(--cd);color:var(--tm);border:none;border-radius:var(--rs);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;display:none}
+#toast{position:fixed;bottom:14px;right:14px;background:var(--br);color:#fff;padding:8px 14px;border-radius:var(--rs);font-size:10px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.3);transform:translateY(60px);opacity:0;transition:all .3s;z-index:9999;max-width:260px}
+#toast.show{transform:translateY(0);opacity:1}
+#mobNav{display:none;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,var(--br),var(--bm));border-top:1px solid rgba(255,255,255,.15);padding:5px 0;z-index:300;justify-content:space-around}
+#mobNav button{background:none;border:none;color:rgba(255,255,255,.75);font-size:8px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:3px 8px;border-radius:7px}
+#mobNav button span{font-size:16px}
+.empty{padding:36px;text-align:center;color:var(--tl);font-size:11px}
+.empty .ei{font-size:32px;margin-bottom:7px}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:var(--cd)}::-webkit-scrollbar-thumb{background:var(--cbl);border-radius:3px}
+@media print{.tnav,.fbar,.nop{display:none!important}.page{display:block!important;padding:0}body{background:#fff}}
+@media(max-width:600px){#mobNav{display:flex!important}body{padding-bottom:68px}.ntabs{display:none!important}.fg2,.fg3,.fg4{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="loginScreen">
+  <div class="lbox">
+    <div style="font-size:42px">&#x1F4CA;</div>
+    <h1>ODMSLLP Consumption Manager</h1>
+    <p>Multi-Company Tracking System v2.0</p>
+    <div class="lf"><label>Username</label>
+      <div class="liw"><span>&#x1F464;</span><input type="text" id="liU" placeholder="admin" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+    </div>
+    <div class="lf"><label>Password</label>
+      <div class="liw"><span>&#x1F512;</span><input type="password" id="liP" placeholder="password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+    </div>
+    <button class="btnL" onclick="doLogin()">Sign In</button>
+    <div class="lerr" id="liErr">Invalid username or password</div>
+    <div class="lhint"><strong>Default Accounts:</strong><br>admin / admin123 &nbsp;|&nbsp; staff / staff123</div>
+  </div>
+</div>
+<div id="app">
+<nav class="tnav">
+  <div class="nbrand"><span class="nlogo">&#x1F4CA;</span>
+    <div><h1>ODMSLLP ConsumPro</h1><p>Admin Team - On Direct Marketing Services LLP</p></div>
+  </div>
+  <div class="ndiv"></div>
+  <div class="cosel">
+    <span id="navDot" class="codot" style="background:#f0aa45"></span>
+    <span style="font-size:9px;color:rgba(255,255,255,.6);font-weight:500">Co:</span>
+    <select id="navCoSel" onchange="onNavCo()"><option value="">All</option></select>
+  </div>
+  <div class="ntabs">
+    <button class="ntab active" id="tab-dash" onclick="goPage('dash')">Dashboard</button>
+    <button class="ntab" id="tab-reg" onclick="goPage('reg')">Register</button>
+    <button class="ntab" id="tab-master" onclick="goPage('master')">Master</button>
+    <button class="ntab" id="tab-sync" onclick="goPage('sync')">Sync</button>
+  </div>
+  <div class="nright">
+    <div class="upill"><span id="navUN"></span><span class="rbadge rb-adm" id="navRB">ADMIN</span></div>
+    <button class="nibtn" onclick="doLogout()">Logout</button>
+  </div>
+</nav>
+<div id="pg-dash" class="page active">
+  <div class="fbar nop">
+    <div class="fg"><label>Month</label><select id="dbMo" onchange="renderDash()"></select></div>
+    <div class="fg"><label>Type</label><select id="dbCat" onchange="renderDash()"><option value="">All Types</option></select></div>
+    <button class="btn bghst bsm" onclick="exportDash()">Export CSV</button>
+  </div>
+  <div class="kgrid" id="dashKPI"></div>
+  <div class="card">
+    <div class="ch"><h3 id="dbTtl">Monthly Consumption Summary</h3></div>
+    <div style="padding:0;overflow-x:auto"><div id="dashSum"><div class="empty"><div class="ei">&#x1F4C5;</div>Select a month above</div></div></div>
+  </div>
+</div>
+<div id="pg-reg" class="page">
+  <div class="fbar nop" style="gap:7px;align-items:flex-end">
+    <div class="fg"><label>Company</label><select id="rgCo" onchange="onRgCo()" style="min-width:130px"><option value="">-- Select --</option></select></div>
+    <div class="fg"><label>Type</label><select id="rgCat" onchange="onRgCat()" style="min-width:140px"><option value="">-- Select --</option></select></div>
+    <div class="fg"><label>Month</label><select id="rgMo" onchange="loadReg()" style="min-width:120px"></select></div>
+    <div class="fg" id="rgVW" style="display:none"><label>Vendor</label><select id="rgVendor" onchange="loadReg()" style="min-width:130px"><option value="">All Vendors</option></select></div>
+    <div class="fg" id="rgFW" style="display:none"><label>Floor</label><select id="rgFloor" onchange="loadReg()" style="min-width:90px"><option value="">All</option></select></div>
+    <div class="fg" id="rgMW" style="display:none"><label>Source</label><select id="rgMeter" onchange="loadReg()" style="min-width:80px"><option value="">All</option></select></div>
+    <div style="margin-left:auto;display:flex;gap:5px;align-items:flex-end">
+      <button class="btn bghst bsm nop" onclick="window.print()">Print</button>
+      <button class="btn bsucc bsm nop" id="btnOrdSec" style="display:none" onclick="toggleOrdSec()">Orders</button>
+    </div>
+  </div>
+  <div class="alert ai" id="rgBanner">Select Company, Type, and Month to load register.</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+    <div style="font-size:15px;font-weight:800;color:var(--br)" id="rgTitle">Consumption Register</div>
+    <div id="rgBadges" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+  </div>
+  <div id="regWrap"><div class="empty"><div class="ei">&#x1F4CB;</div>Select filters above</div></div>
+  <div id="ordSec" style="display:none;margin-top:10px" class="nop">
+    <div class="card"><div class="ch"><h3>Set Order Quantities</h3></div><div class="cb"><div id="ordInputs"></div></div></div>
+  </div>
+  <div id="mpLegend" style="display:none;margin-top:8px;font-size:9px;font-weight:700;display:none" class="nop">
+    Attendance: <span class="badge" style="background:#d4edda;color:#155724">P=Present</span>
+    <span class="badge" style="background:#f8d7da;color:#721c24">A=Absent</span>
+    <span class="badge" style="background:#d1ecf1;color:#0c5460">H=Holiday</span>
+    <span class="badge" style="background:#fff3cd;color:#856404">WO=Week Off</span>
+    <span class="badge" style="background:#dbeafe;color:#1e40af">Sat</span>
+    <span class="badge" style="background:#fce7e7;color:#991b1b">Sun</span>
+  </div>
+</div>
+<div id="pg-master" class="page">
+  <div class="mtbar">
+    <button class="mtab active" onclick="showMT('companies',this)">Companies</button>
+    <button class="mtab" onclick="showMT('types',this)">Cons. Types</button>
+    <button class="mtab" onclick="showMT('vendors',this)">Vendors</button>
+    <button class="mtab" onclick="showMT('items',this)">Items</button>
+    <button class="mtab" onclick="showMT('employees',this)">Employees</button>
+    <button class="mtab" onclick="showMT('elec',this)">Electricity</button>
+    <button class="mtab" onclick="showMT('rates',this)">Rates</button>
+    <button class="mtab" onclick="showMT('months',this)">Months</button>
+    <button class="mtab" onclick="showMT('users',this)">Users</button>
+  </div>
+  <div id="mt-companies">
+    <div class="card"><div class="ch"><h3>Add Company</h3></div><div class="cb">
+      <div class="fg2" style="margin-bottom:10px">
+        <div class="fgrp"><label>Name *</label><input type="text" id="ncName" placeholder="e.g. ODMSLLP"/></div>
+        <div class="fgrp"><label>Full Name</label><input type="text" id="ncFull" placeholder="Full legal name"/></div>
+        <div class="fgrp"><label>Icon</label><input type="text" id="ncIcon" placeholder="emoji" maxlength="4"/></div>
+        <div class="fgrp"><label>Color</label><input type="color" id="ncColor" value="#c97d35" style="height:34px;padding:2px"/></div>
+      </div>
+      <button class="btn bprim" onclick="addCompany()">Add Company</button>
+    </div></div>
+    <div id="coList"></div>
+  </div>
+  <div id="mt-types" style="display:none">
+    <div class="card"><div class="ch"><h3>Add Consumption Type</h3></div><div class="cb">
+      <div class="fg4" style="margin-bottom:10px">
+        <div class="fgrp"><label>Name *</label><input type="text" id="ntName" placeholder="e.g. Tea and Coffee"/></div>
+        <div class="fgrp"><label>Unit</label><input type="text" id="ntUnit" placeholder="Cups/Units/KWH"/></div>
+        <div class="fgrp"><label>Icon</label><input type="text" id="ntIcon" placeholder="emoji" maxlength="4"/></div>
+        <div class="fgrp"><label>Mode</label><select id="ntMode">
+          <option value="standard">Standard (Qty/Day)</option>
+          <option value="electricity">Electricity (Meter Reading)</option>
+          <option value="manpower">Manpower (Attendance)</option>
+        </select></div>
+      </div>
+      <div class="fgrp" style="margin-bottom:10px;max-width:180px"><label>Color</label><input type="color" id="ntColor" value="#c97d35" style="height:34px;padding:2px;width:100%"/></div>
+      <button class="btn bprim" onclick="addType()">Add Type</button>
+    </div></div>
+    <div id="typeList"></div>
+  </div>
+  <div id="mt-vendors" style="display:none">
+    <div class="card"><div class="ch"><h3>Add Vendor</h3></div><div class="cb">
+      <div class="fg3" style="margin-bottom:10px">
+        <div class="fgrp"><label>Vendor Name *</label><input type="text" id="nvName" placeholder="e.g. Maple Solution"/></div>
+        <div class="fgrp"><label>Company</label><select id="nvCo"><option value="">All Companies</option></select></div>
+        <div class="fgrp"><label>Type</label><select id="nvCat"><option value="">All Types</option></select></div>
+        <div class="fgrp"><label>Contact</label><input type="text" id="nvContact" placeholder="Phone/Email"/></div>
+        <div class="fgrp"><label>GST No.</label><input type="text" id="nvGst" placeholder="GSTIN"/></div>
+      </div>
+      <button class="btn bprim" onclick="addVendor()">Add Vendor</button>
+    </div></div>
+    <div id="vendorList"></div>
+  </div>
+  <div id="mt-items" style="display:none">
+    <div class="card"><div class="ch"><h3>Add Item / Product</h3></div><div class="cb">
+      <div class="fg4" style="margin-bottom:10px">
+        <div class="fgrp"><label>Company *</label><select id="niCo" onchange="filterNiCat()"><option value="">-- Select --</option></select></div>
+        <div class="fgrp"><label>Type *</label><select id="niCat" onchange="filterNiVend()"><option value="">-- Select --</option></select></div>
+        <div class="fgrp"><label>Vendor</label><select id="niVend"><option value="">-- None --</option></select></div>
+        <div class="fgrp"><label>Item Name *</label><input type="text" id="niName" placeholder="Item name"/></div>
+        <div class="fgrp"><label>Brand</label><input type="text" id="niBrand" placeholder="Brand"/></div>
+        <div class="fgrp"><label>Unit</label><input type="text" id="niUnit" placeholder="Cups/Nos/Box"/></div>
+        <div class="fgrp"><label>HSN</label><input type="text" id="niHsn" placeholder="HSN code"/></div>
+        <div class="fgrp"><label>Default Rate</label><input type="number" id="niRate" step="0.01" min="0" placeholder="0.00"/></div>
+      </div>
+      <button class="btn bprim" onclick="addItem()">Add Item</button>
+    </div></div>
+    <div class="fbar" style="margin-bottom:7px">
+      <div class="fg"><label>Filter Company</label><select id="ifCo" onchange="renderItemList()"><option value="">All</option></select></div>
+      <div class="fg"><label>Filter Type</label><select id="ifCat" onchange="renderItemList()"><option value="">All</option></select></div>
+      <div class="fg"><label>Filter Vendor</label><select id="ifVend" onchange="renderItemList()"><option value="">All</option></select></div>
+    </div>
+    <div class="card"><div class="ch"><h3>Items List</h3></div>
+      <div style="padding:0;overflow-x:auto"><table class="stbl">
+        <thead><tr><th>Item</th><th>Company</th><th>Type</th><th>Vendor</th><th>Brand</th><th>Unit</th><th>HSN</th><th>Rate</th><th>Del</th></tr></thead>
+        <tbody id="itemsBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+  <div id="mt-employees" style="display:none">
+    <div class="alert ai" style="margin-bottom:10px">Employees are linked to a Manpower-type. Each employee = one row in the attendance register.</div>
+    <div class="card"><div class="ch"><h3>Add Employee / Manpower</h3></div><div class="cb">
+      <div class="fg4" style="margin-bottom:10px">
+        <div class="fgrp"><label>Company *</label><select id="neCo" onchange="filterNeCat()"><option value="">-- Select --</option></select></div>
+        <div class="fgrp"><label>Manpower Type *</label><select id="neCat" onchange="filterNeVend()"><option value="">-- Select --</option></select></div>
+        <div class="fgrp"><label>Vendor/Agency *</label><select id="neVend"><option value="">-- Select --</option></select></div>
+        <div class="fgrp"><label>Employee Name *</label><input type="text" id="neName" placeholder="Full Name"/></div>
+        <div class="fgrp"><label>Designation</label><input type="text" id="neDes" placeholder="Security Guard"/></div>
+        <div class="fgrp"><label>Employee ID</label><input type="text" id="neEid" placeholder="EMP-001"/></div>
+        <div class="fgrp"><label>Day Rate</label><input type="number" id="neRate" step="0.01" min="0" placeholder="Per day rate"/></div>
+      </div>
+      <button class="btn bprim" onclick="addEmployee()">Add Employee</button>
+    </div></div>
+    <div class="fbar" style="margin-bottom:7px">
+      <div class="fg"><label>Filter Co</label><select id="efCo" onchange="renderEmpList()"><option value="">All</option></select></div>
+      <div class="fg"><label>Filter Type</label><select id="efCat" onchange="renderEmpList()"><option value="">All</option></select></div>
+      <div class="fg"><label>Filter Vendor</label><select id="efVend" onchange="renderEmpList()"><option value="">All</option></select></div>
+    </div>
+    <div id="empList"></div>
+  </div>
+  <div id="mt-elec" style="display:none">
+    <div class="alert ai" style="margin-bottom:10px">Each meter = one row in the electricity register. Example: 309 ELE, 309 HVAC, 309 DG. Set floor and type.</div>
+    <div class="card"><div class="ch"><h3>Add Electricity Meter</h3></div><div class="cb">
+      <div class="fg4" style="margin-bottom:10px">
+        <div class="fgrp"><label>Company *</label><select id="nelCo" onchange="filterNelCat()"><option value="">-- Select --</option></select></div>
+        <div class="fgrp"><label>Electricity Type *</label><select id="nelCat"><option value="">-- Select --</option></select></div>
+        <div class="fgrp"><label>Floor *</label><input type="text" id="nelFloor" placeholder="309 / 310 / Common"/></div>
+        <div class="fgrp"><label>Meter Type *</label><select id="nelMeter">
+          <option value="ELE">ELE (EB Main)</option>
+          <option value="HVAC">HVAC (EB HVAC)</option>
+          <option value="DG">DG (DG Main)</option>
+          <option value="DG HVAC">DG HVAC</option>
+        </select></div>
+        <div class="fgrp"><label>Meter Label</label><input type="text" id="nelLabel" placeholder="e.g. Office 309 ELE"/></div>
+        <div class="fgrp"><label>Source</label><select id="nelSrc">
+          <option value="EB">EB (Electricity Board)</option>
+          <option value="DG">DG (Generator)</option>
+        </select></div>
+        <div class="fgrp"><label>Rate/KWH</label><input type="number" id="nelRate" step="0.01" min="0" placeholder="16.00"/></div>
+      </div>
+      <button class="btn bprim" onclick="addElecMeter()">Add Meter</button>
+    </div></div>
+    <div class="fbar" style="margin-bottom:7px">
+      <div class="fg"><label>Filter Co</label><select id="elfCo" onchange="renderElecList()"><option value="">All</option></select></div>
+      <div class="fg"><label>Filter Type</label><select id="elfCat" onchange="renderElecList()"><option value="">All</option></select></div>
+    </div>
+    <div id="elecList"></div>
+  </div>
+  <div id="mt-rates" style="display:none">
+    <div class="card"><div class="ch"><h3>Update Rate for Month</h3></div><div class="cb">
+      <div class="fg4" style="margin-bottom:10px">
+        <div class="fgrp"><label>Company</label><select id="ratCo" onchange="filterRatItems()"><option value="">-- Select --</option></select></div>
+        <div class="fgrp"><label>Item / Meter / Employee</label><select id="ratIt"><option value="">-- Select --</option></select></div>
+        <div class="fgrp"><label>Month</label><select id="ratMo"></select></div>
+        <div class="fgrp"><label>Rate</label><input type="number" id="ratVal" step="0.01" placeholder="0.00"/></div>
+      </div>
+      <button class="btn bprim" onclick="saveRate()">Save Rate</button>
+    </div></div>
+    <div id="rateHist"></div>
+  </div>
+  <div id="mt-months" style="display:none">
+    <div class="card"><div class="ch"><h3>Manage Months</h3></div><div class="cb">
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px">
+        <input type="month" id="addMoInp"/>
+        <button class="btn bprim" onclick="addMonth()">Add Month</button>
+        <button class="btn bghst" onclick="addNextMo()">Add Next Month</button>
+      </div>
+      <div id="moChips"></div>
+    </div></div>
+  </div>
+  <div id="mt-users" style="display:none">
+    <div class="card"><div class="ch"><h3>Add User</h3></div><div class="cb">
+      <div class="fg4" style="margin-bottom:10px">
+        <div class="fgrp"><label>Username *</label><input type="text" id="nuU" placeholder="johndoe"/></div>
+        <div class="fgrp"><label>Password *</label><input type="password" id="nuP" placeholder="min 4 chars"/></div>
+        <div class="fgrp"><label>Display Name *</label><input type="text" id="nuN" placeholder="John Doe"/></div>
+        <div class="fgrp"><label>Role</label><select id="nuR"><option value="staff">Staff</option><option value="admin">Admin</option></select></div>
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:8px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Permissions (Staff)</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap" id="permTog">
+          <span class="pchip pc-on" data-p="dash">Dashboard</span>
+          <span class="pchip pc-on" data-p="reg">Register</span>
+          <span class="pchip pc-off" data-p="master">Master</span>
+          <span class="pchip pc-off" data-p="sync">Sync</span>
+          <span class="pchip pc-on" data-p="entry">Data Entry</span>
+          <span class="pchip pc-off" data-p="orders">Orders</span>
+        </div>
+      </div>
+      <button class="btn bprim" onclick="addUser()">Add User</button>
+    </div></div>
+    <div id="userList" style="margin-top:9px"></div>
+  </div>
+</div>
+<div id="pg-sync" class="page">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="syncGrid">
+    <div>
+      <div style="font-size:14px;font-weight:800;color:var(--br);margin-bottom:9px;padding-bottom:7px;border-bottom:2px solid var(--cb)">Import Data</div>
+      <div class="scsec">
+        <h4>Import from File (CSV / JSON)</h4>
+        <input type="file" id="csvIn" accept=".csv,.json" style="display:none" onchange="importFile(this)">
+        <button class="btn bblue" onclick="document.getElementById('csvIn').click()">Choose File</button>
+        <div id="impStat" style="margin-top:7px;font-size:9px;color:var(--tl)"></div>
+      </div>
+      <div class="scsec">
+        <h4>Import from URL</h4>
+        <div style="display:flex;gap:7px;margin-bottom:7px">
+          <input type="text" id="impUrl" placeholder="https://drive.google.com/uc?id=..." style="flex:1"/>
+          <button class="btn bblue" onclick="importUrl()">Fetch</button>
+        </div>
+        <div id="urlStat" style="font-size:9px;color:var(--tl)"></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:14px;font-weight:800;color:var(--br);margin-bottom:9px;padding-bottom:7px;border-bottom:2px solid var(--cb)">Export and Templates</div>
+      <div class="scsec">
+        <h4>Download CSV Template</h4>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:flex-end;margin-bottom:7px">
+          <div class="fg"><label>Company</label><select id="tplCo"><option value="">All</option></select></div>
+          <div class="fg"><label>Type</label><select id="tplCat"><option value="">All Types</option></select></div>
+          <button class="btn bpurp" onclick="dlTemplate()">Download Template</button>
+        </div>
+      </div>
+      <div class="scsec">
+        <h4>Export Data</h4>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:flex-end;margin-bottom:7px">
+          <div class="fg"><label>Month</label><select id="expMo"><option value="">All</option></select></div>
+          <div class="fg"><label>Company</label><select id="expCo"><option value="">All</option></select></div>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <button class="btn bsucc" onclick="doExport()">Export CSV</button>
+          <button class="btn bghst bsm" onclick="backupJSON()">Backup JSON</button>
+          <input type="file" id="jsonIn" accept=".json" style="display:none" onchange="restoreJSON(this)">
+          <button class="btn bblue bsm" onclick="document.getElementById('jsonIn').click()">Restore JSON</button>
+        </div>
+        <div id="expStat" style="margin-top:7px;font-size:9px;color:var(--tl)"></div>
+      </div>
+      <div class="scsec" style="border:1.5px solid #fcc;background:#fff8f8" id="dangerZone">
+        <h4 style="color:var(--red)">Danger Zone</h4>
+        <button class="btn bdngr bsm" style="margin-top:6px" onclick="resetAll()">Reset All Data</button>
+      </div>
+    </div>
+  </div>
+  <style>@media(max-width:768px){#syncGrid{grid-template-columns:1fr!important}}</style>
+</div>
+</div>
+<nav id="mobNav">
+  <button onclick="goPage('dash')"><span>&#x1F4C8;</span>Dashboard</button>
+  <button onclick="goPage('reg')"><span>&#x1F4CB;</span>Register</button>
+  <button onclick="goPage('master')"><span>&#x2699;&#xFE0F;</span>Master</button>
+  <button onclick="goPage('sync')"><span>&#x1F504;</span>Sync</button>
+</nav>
+<div id="popOv"><div id="popBox">
+  <div id="popIcon">OK</div><div id="popTitle">Done</div>
+  <div id="popMsg"></div>
+  <div class="popbtns">
+    <button id="popCan" onclick="closePop()">Cancel</button>
+    <button id="popOk" onclick="closePop()">OK</button>
+  </div>
+</div></div>
+<div id="toast"></div>
+<script>
+const SK='odms_v2';
+const ML=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const ML2=m=>{if(!m)return'';const[y,mo]=m.split('-');return ML[parseInt(mo)-1]+' '+y;};
+const TODAY_M=(()=>{const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');})();
+const TODAY=new Date().toISOString().split('T')[0];
+const DIM=m=>{const[y,mo]=m.split('-').map(Number);return new Date(y,mo,0).getDate();};
+const FMT=n=>'\u20B9'+Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:2});
+const FMN=n=>Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:2});
+const DOW=(y,m,d)=>new Date(y,m-1,d).getDay();
+const DN=['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+function defData(){return{
+  users:[
+    {id:'u1',username:'admin',password:'admin123',name:'Administrator',role:'admin',perms:{dash:true,reg:true,master:true,sync:true,entry:true,orders:true}},
+    {id:'u2',username:'staff',password:'staff123',name:'Staff User',role:'staff',perms:{dash:true,reg:true,master:false,sync:false,entry:true,orders:false}},
+  ],
+  companies:[
+    {id:'odms',name:'ODMSLLP',fullName:'On Direct Marketing Services LLP',icon:'\u{1F3E2}',color:'#c97d35',
+     categories:['tea','hk','medical','stat','toner','water','news','elec-eb','elec-dg','gallent-sg','oopl-sg','imperial-hk','master-hk','other-bills']},
+  ],
+  consumptionTypes:[
+    {id:'tea',        name:'Tea & Coffee',         unit:'Cups',   icon:'\u2615',color:'#6b3a1f',mode:'standard'},
+    {id:'hk',         name:'HK Material',           unit:'Units',  icon:'\U0001F9F9',color:'#3d6b4a',mode:'standard'},
+    {id:'medical',    name:'Medical Items',          unit:'Units',  icon:'\U0001F48A',color:'#b83020',mode:'standard'},
+    {id:'stat',       name:'Stationery',            unit:'Nos',    icon:'\U0001F4DD',color:'#7030a0',mode:'standard'},
+    {id:'toner',      name:'Toner / Cartridge',     unit:'Units',  icon:'\U0001F5A8',color:'#2c3e50',mode:'standard'},
+    {id:'water',      name:'Water / Bisleri',       unit:'Bottles',icon:'\U0001F4A7',color:'#2471a3',mode:'standard'},
+    {id:'news',       name:'Newspaper',             unit:'Nos',    icon:'\U0001F4F0',color:'#6b5010',mode:'standard'},
+    {id:'elec-eb',    name:'Electricity EB',        unit:'KWH',    icon:'\u26A1',   color:'#d4891a',mode:'electricity'},
+    {id:'elec-dg',    name:'Electricity DG',        unit:'KWH',    icon:'\U0001F50B',color:'#8B6914',mode:'electricity'},
+    {id:'gallent-sg', name:'Gallent Security',      unit:'Days',   icon:'\U0001F512',color:'#e67e22',mode:'manpower'},
+    {id:'oopl-sg',    name:'OOPL Security',         unit:'Days',   icon:'\U0001F6E1',color:'#d35400',mode:'manpower'},
+    {id:'imperial-hk',name:'Imperial HouseKeeping', unit:'Days',   icon:'\U0001F454',color:'#5d6d7e',mode:'manpower'},
+    {id:'master-hk',  name:'Master HouseKeeping',   unit:'Days',   icon:'\U0001F3E0',color:'#27ae60',mode:'manpower'},
+    {id:'other-bills',name:'Other Bills',           unit:'NA',     icon:'\U0001F4CB',color:'#95a5a6',mode:'standard'},
+  ],
+  vendors:[
+    {id:'vnd-veebha',name:'Veebha Tea & Coffee',companyId:'odms',categoryId:'tea',    contact:'',gst:''},
+    {id:'vnd-sumant', name:'Sumant Technotrade', companyId:'odms',categoryId:'tea',    contact:'',gst:''},
+    {id:'vnd-maple',  name:'Maple Solution',      companyId:'odms',categoryId:'stat',  contact:'',gst:''},
+    {id:'vnd-gallent',name:'Gallent Security',    companyId:'odms',categoryId:'gallent-sg',contact:'',gst:''},
+    {id:'vnd-oopl',   name:'OOPL Services',       companyId:'odms',categoryId:'oopl-sg',  contact:'',gst:''},
+    {id:'vnd-imp',    name:'Imperial Services',   companyId:'odms',categoryId:'imperial-hk',contact:'',gst:''},
+    {id:'vnd-gen',    name:'General Vendor',      companyId:'',    categoryId:'',      contact:'',gst:''},
+  ],
+  items:[
+    {id:'i-vtea',companyId:'odms',categoryId:'tea',vendorId:'vnd-veebha',name:'Veebha Tea & Coffee',brand:'Veebha',unit:'Cups',hsn:'0902',rate:160.00,itemType:'standard'},
+    {id:'i-stea',companyId:'odms',categoryId:'tea',vendorId:'vnd-sumant',name:'Sumant Tea & Coffee',brand:'Sumant Technotrade',unit:'Cups',hsn:'0902',rate:19.37,itemType:'standard'},
+    {id:'i-hk',  companyId:'odms',categoryId:'hk', vendorId:'vnd-gen',  name:'HK Material',brand:'Various',unit:'Units',hsn:'',rate:0,itemType:'standard'},
+    {id:'i-med1',companyId:'odms',categoryId:'medical',vendorId:'vnd-gen',name:'Glucon-D',brand:'',unit:'Units',hsn:'',rate:0,itemType:'standard'},
+    {id:'i-med2',companyId:'odms',categoryId:'medical',vendorId:'vnd-gen',name:'Volini Spray',brand:'',unit:'Units',hsn:'',rate:0,itemType:'standard'},
+    {id:'i-med3',companyId:'odms',categoryId:'medical',vendorId:'vnd-gen',name:'Bandaid',brand:'',unit:'Units',hsn:'',rate:0,itemType:'standard'},
+    {id:'i-med4',companyId:'odms',categoryId:'medical',vendorId:'vnd-gen',name:'Dettol Bottle',brand:'',unit:'Units',hsn:'',rate:0,itemType:'standard'},
+    {id:'i-sta1',companyId:'odms',categoryId:'stat',vendorId:'vnd-maple',name:'A4 Copy Paper',brand:'Andhra/Century',unit:'Box',hsn:'',rate:230,itemType:'standard'},
+    {id:'i-sta2',companyId:'odms',categoryId:'stat',vendorId:'vnd-maple',name:'Conference Pad',brand:'Vedant',unit:'Nos',hsn:'',rate:6.5,itemType:'standard'},
+    {id:'i-sta3',companyId:'odms',categoryId:'stat',vendorId:'vnd-maple',name:'Spring File',brand:'Rajal/Vagad',unit:'Nos',hsn:'',rate:12,itemType:'standard'},
+    {id:'i-sta4',companyId:'odms',categoryId:'stat',vendorId:'vnd-maple',name:'Writing Pad No.1',brand:'Vedant',unit:'Nos',hsn:'',rate:20,itemType:'standard'},
+    {id:'i-sta5',companyId:'odms',categoryId:'stat',vendorId:'vnd-maple',name:'Ball Pen',brand:'Natraj',unit:'Nos',hsn:'',rate:2.9,itemType:'standard'},
+    {id:'i-ton', companyId:'odms',categoryId:'toner',vendorId:'vnd-gen',name:'Toner Cartridge',brand:'Various',unit:'Units',hsn:'',rate:450,itemType:'standard'},
+    {id:'i-wat', companyId:'odms',categoryId:'water',vendorId:'vnd-gen',name:'Bisleri / Water',brand:'Bisleri',unit:'Bottles',hsn:'',rate:35,itemType:'standard'},
+    {id:'i-news',companyId:'odms',categoryId:'news',vendorId:'vnd-gen',name:'Daily Newspaper',brand:'Various',unit:'Nos',hsn:'',rate:15,itemType:'standard'},
+    {id:'e-309-ele', companyId:'odms',categoryId:'elec-eb',vendorId:'',name:'309 ELE', brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'309',meterType:'ELE', src:'EB'},
+    {id:'e-309-hvac',companyId:'odms',categoryId:'elec-eb',vendorId:'',name:'309 HVAC',brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'309',meterType:'HVAC',src:'EB'},
+    {id:'e-310-ele', companyId:'odms',categoryId:'elec-eb',vendorId:'',name:'310 ELE', brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'310',meterType:'ELE', src:'EB'},
+    {id:'e-310-hvac',companyId:'odms',categoryId:'elec-eb',vendorId:'',name:'310 HVAC',brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'310',meterType:'HVAC',src:'EB'},
+    {id:'e-311-ele', companyId:'odms',categoryId:'elec-eb',vendorId:'',name:'311 ELE', brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'311',meterType:'ELE', src:'EB'},
+    {id:'e-312-ele', companyId:'odms',categoryId:'elec-eb',vendorId:'',name:'312 ELE', brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'312',meterType:'ELE', src:'EB'},
+    {id:'e-313-ele', companyId:'odms',categoryId:'elec-eb',vendorId:'',name:'313 ELE', brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'313',meterType:'ELE', src:'EB'},
+    {id:'e-314-ele', companyId:'odms',categoryId:'elec-eb',vendorId:'',name:'314 ELE', brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'314',meterType:'ELE', src:'EB'},
+    {id:'e-315-ele', companyId:'odms',categoryId:'elec-eb',vendorId:'',name:'315 ELE', brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'315',meterType:'ELE', src:'EB'},
+    {id:'e-316-ele', companyId:'odms',categoryId:'elec-eb',vendorId:'',name:'316 ELE', brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'316',meterType:'ELE', src:'EB'},
+    {id:'e-309-dg',  companyId:'odms',categoryId:'elec-dg',vendorId:'',name:'309 DG',  brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'309',meterType:'DG',   src:'DG'},
+    {id:'e-311-dg',  companyId:'odms',categoryId:'elec-dg',vendorId:'',name:'311 DG',  brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'311',meterType:'DG',   src:'DG'},
+    {id:'e-312-dg',  companyId:'odms',categoryId:'elec-dg',vendorId:'',name:'312 DG',  brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'312',meterType:'DG',   src:'DG'},
+    {id:'e-313-dg',  companyId:'odms',categoryId:'elec-dg',vendorId:'',name:'313 DG',  brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'313',meterType:'DG',   src:'DG'},
+    {id:'e-314-dg',  companyId:'odms',categoryId:'elec-dg',vendorId:'',name:'314 DG',  brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'314',meterType:'DG',   src:'DG'},
+    {id:'e-315-dg',  companyId:'odms',categoryId:'elec-dg',vendorId:'',name:'315 DG',  brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'315',meterType:'DG',   src:'DG'},
+    {id:'e-316-dg',  companyId:'odms',categoryId:'elec-dg',vendorId:'',name:'316 DG',  brand:'',unit:'KWH',hsn:'',rate:16,itemType:'electricity',floor:'316',meterType:'DG',   src:'DG'},
+    {id:'emp-g1',companyId:'odms',categoryId:'gallent-sg', vendorId:'vnd-gallent',name:'Rahul Sharma',  designation:'Security Guard',empId:'GS-001',rate:500,itemType:'manpower'},
+    {id:'emp-g2',companyId:'odms',categoryId:'gallent-sg', vendorId:'vnd-gallent',name:'Suresh Kumar',  designation:'Security Guard',empId:'GS-002',rate:500,itemType:'manpower'},
+    {id:'emp-g3',companyId:'odms',categoryId:'gallent-sg', vendorId:'vnd-gallent',name:'Ajay Singh',    designation:'Supervisor',    empId:'GS-003',rate:700,itemType:'manpower'},
+    {id:'emp-o1',companyId:'odms',categoryId:'oopl-sg',    vendorId:'vnd-oopl',   name:'Ramesh Patil',  designation:'Security Guard',empId:'OP-001',rate:480,itemType:'manpower'},
+    {id:'emp-o2',companyId:'odms',categoryId:'oopl-sg',    vendorId:'vnd-oopl',   name:'Vijay Jadhav',  designation:'Security Guard',empId:'OP-002',rate:480,itemType:'manpower'},
+    {id:'emp-i1',companyId:'odms',categoryId:'imperial-hk',vendorId:'vnd-imp',    name:'Sunita Devi',   designation:'Housekeeper',   empId:'IH-001',rate:400,itemType:'manpower'},
+    {id:'emp-i2',companyId:'odms',categoryId:'imperial-hk',vendorId:'vnd-imp',    name:'Kavita Rao',    designation:'Housekeeper',   empId:'IH-002',rate:400,itemType:'manpower'},
+  ],
+  months:['2026-07','2026-08'],
+  rates:{},regData:{},syncLog:[]
+};}
+
+let DB=(()=>{try{const r=localStorage.getItem(SK);if(r){const d=JSON.parse(r);if(!d.vendors)d.vendors=[];if(!d.syncLog)d.syncLog=[];return d;}}catch(e){}return defData();})();
+function save(){localStorage.setItem(SK,JSON.stringify(DB));}
+
+const RK=(mo,co,cat,iid)=>mo+'|'+co+'|'+cat+'|'+iid;
+const getRate=(iid,mo)=>{const it=DB.items.find(x=>x.id===iid);if(!it)return 0;return(DB.rates[iid]&&DB.rates[iid][mo])||it.rate||0;};
+const getCatMode=cid=>{const c=DB.consumptionTypes.find(x=>x.id===cid);return c?c.mode:'standard';};
+const getVndName=vid=>{const v=DB.vendors.find(x=>x.id===vid);return v?v.name:'';};
+
+let CU=null;
+const can=p=>CU&&(CU.role==='admin'||!!(CU.perms&&CU.perms[p]));
+
+function doLogin(){
+  const u=document.getElementById('liU').value.trim().toLowerCase();
+  const p=document.getElementById('liP').value;
+  const usr=DB.users.find(x=>x.username.toLowerCase()===u&&x.password===p);
+  if(!usr){document.getElementById('liErr').style.display='block';return;}
+  document.getElementById('liErr').style.display='none';
+  CU=usr;sessionStorage.setItem('cmp_cu',JSON.stringify(usr));showApp();
+}
+function doLogout(){CU=null;sessionStorage.removeItem('cmp_cu');document.getElementById('loginScreen').style.display='flex';document.getElementById('app').style.display='none';}
+function showApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('navUN').textContent=CU.name;
+  const rb=document.getElementById('navRB');rb.textContent=CU.role.toUpperCase();rb.className='rbadge '+(CU.role==='admin'?'rb-adm':'rb-stf');
+  applyPerms();initAll();
+}
+function applyPerms(){
+  ['dash','reg','master','sync'].forEach(p=>{const t=document.getElementById('tab-'+p);if(t)t.style.display=can(p)?'':'none';});
+  const dz=document.getElementById('dangerZone');if(dz)dz.style.display=can('master')?'':'none';
+}
+
+function goPage(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.ntab').forEach(x=>x.classList.remove('active'));
+  const pg=document.getElementById('pg-'+p);if(pg)pg.classList.add('active');
+  const tb=document.getElementById('tab-'+p);if(tb)tb.classList.add('active');
+  if(p==='dash')renderDash();
+  if(p==='reg')syncRegCo();
+  if(p==='master')renderMasterPage();
+  if(p==='sync')renderSyncPage();
+}
+function showMT(t,btn){
+  ['companies','types','vendors','items','employees','elec','rates','months','users'].forEach(x=>{const el=document.getElementById('mt-'+x);if(el)el.style.display='none';});
+  document.querySelectorAll('.mtab').forEach(x=>x.classList.remove('active'));
+  const panel=document.getElementById('mt-'+t);if(panel)panel.style.display='';
+  if(btn)btn.classList.add('active');
+  if(t==='companies')renderCoList();
+  if(t==='types')renderTypeList();
+  if(t==='vendors'){popCoSel('nvCo',true);popCatSel('nvCat',true);renderVendorList();}
+  if(t==='items'){populateItemTabSels();renderItemList();}
+  if(t==='employees'){populateEmpTabSels();renderEmpList();}
+  if(t==='elec'){populateElecTabSels();renderElecList();}
+  if(t==='rates'){popCoSel('ratCo');popMSel('ratMo');filterRatItems();renderRateHist();}
+  if(t==='months')renderMoChips();
+  if(t==='users')renderUserList();
+}
+function onNavCo(){const coId=document.getElementById('navCoSel').value;const co=DB.companies.find(c=>c.id===coId);document.getElementById('navDot').style.background=co?co.color:'#f0aa45';renderDash();}
+function syncRegCo(){const nId=document.getElementById('navCoSel').value;if(nId){document.getElementById('rgCo').value=nId;onRgCo();}}
+
+function initAll(){
+  const nav=document.getElementById('navCoSel');
+  nav.innerHTML='<option value="">All</option>'+DB.companies.map(c=>'<option value="'+c.id+'">'+c.icon+' '+c.name+'</option>').join('');
+  const rc=document.getElementById('rgCo');
+  rc.innerHTML='<option value="">-- Select --</option>'+DB.companies.map(c=>'<option value="'+c.id+'">'+c.icon+' '+c.name+'</option>').join('');
+  popMSel('dbMo',true);popMSel('rgMo');
+  const dc=document.getElementById('dbCat');
+  dc.innerHTML='<option value="">All Types</option>'+DB.consumptionTypes.map(c=>'<option value="'+c.id+'">'+c.icon+' '+c.name+'</option>').join('');
+  popCoSel('tplCo',true);popCatSel('tplCat',true);popCoSel('expCo',true);popMSel('expMo',true);
+  const dbMo=document.getElementById('dbMo');if(dbMo&&dbMo.options.length>1)dbMo.selectedIndex=dbMo.options.length-1;
+  renderDash();
+}
+
+function popMSel(id,addAll=false,sv=null){
+  const el=document.getElementById(id);if(!el)return;
+  const prev=sv!==null?sv:el.value;el.innerHTML='';
+  if(addAll)el.innerHTML='<option value="">All Months</option>';
+  DB.months.slice().sort().forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=ML2(m);if(m===prev)o.selected=true;el.appendChild(o);});
+  if(!el.value&&!addAll&&DB.months.length)el.value=DB.months.slice().sort()[DB.months.length-1];
+}
+function popCoSel(id,addAll=false){
+  const el=document.getElementById(id);if(!el)return;const prev=el.value;el.innerHTML='';
+  if(addAll)el.innerHTML='<option value="">All Companies</option>';else el.innerHTML='<option value="">-- Select --</option>';
+  DB.companies.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.icon+' '+c.name;if(c.id===prev)o.selected=true;el.appendChild(o);});
+}
+function popCatSel(id,addAll=false){
+  const el=document.getElementById(id);if(!el)return;const prev=el.value;el.innerHTML='';
+  if(addAll)el.innerHTML='<option value="">All Types</option>';else el.innerHTML='<option value="">-- Select --</option>';
+  DB.consumptionTypes.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.icon+' '+c.name;if(c.id===prev)o.selected=true;el.appendChild(o);});
+}
+function refreshAll(){
+  const nav=document.getElementById('navCoSel'),pn=nav.value;
+  nav.innerHTML='<option value="">All</option>'+DB.companies.map(c=>'<option value="'+c.id+'">'+c.icon+' '+c.name+'</option>').join('');if(pn)nav.value=pn;
+  const rc=document.getElementById('rgCo'),pr=rc.value;
+  rc.innerHTML='<option value="">-- Select --</option>'+DB.companies.map(c=>'<option value="'+c.id+'">'+c.icon+' '+c.name+'</option>').join('');if(pr)rc.value=pr;
+  const dc=document.getElementById('dbCat');dc.innerHTML='<option value="">All Types</option>'+DB.consumptionTypes.map(c=>'<option value="'+c.id+'">'+c.icon+' '+c.name+'</option>').join('');
+  popMSel('dbMo',true);popMSel('rgMo');popMSel('expMo',true);popCoSel('expCo',true);popCoSel('tplCo',true);popCatSel('tplCat',true);
+}
+
+function toast(msg,dur=3000){const t=document.getElementById('toast');t.innerHTML=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
+function popup(icon,title,msg,okFn,canFn){
+  document.getElementById('popIcon').textContent=icon;document.getElementById('popTitle').textContent=title;document.getElementById('popMsg').innerHTML=msg;
+  const ok=document.getElementById('popOk'),can=document.getElementById('popCan');
+  ok.onclick=()=>{closePop();if(okFn)okFn();};can.style.display=canFn?'':'none';if(canFn)can.onclick=()=>{closePop();canFn();};
+  document.getElementById('popOv').classList.add('show');
+}
+function closePop(){document.getElementById('popOv').classList.remove('show');}
+
+// ── DASHBOARD ──
+function renderDash(){
+  const mo=document.getElementById('dbMo').value;
+  const catF=document.getElementById('dbCat').value;
+  const navCoId=document.getElementById('navCoSel').value;
+  const cos=navCoId?DB.companies.filter(c=>c.id===navCoId):DB.companies;
+  document.getElementById('dbTtl').textContent=(navCoId?(cos[0]?.name||'')+ ' - ':'All Companies - ')+'Monthly Summary';
+  let tOrd=0,tUse=0,tCl=0,tUA=0;
+  if(mo){cos.forEach(co=>{(catF?[catF]:co.categories).forEach(catId=>{
+    const mode=getCatMode(catId);
+    DB.items.filter(i=>i.companyId===co.id&&i.categoryId===catId).forEach(it=>{
+      const rec=DB.regData[RK(mo,co.id,catId,it.id)]||{};const rate=getRate(it.id,mo);
+      if(mode==='standard'){const ord=rec.order||0,use=Object.values(rec.days||{}).reduce((s,v)=>s+(+v||0),0);tOrd+=ord;tUse+=use;tCl+=ord-use;tUA+=use*rate;}
+      else if(mode==='electricity'){const days=DIM(mo);let lc=rec.open1||0;for(let d=1;d<=days;d++){const dc=(rec.days&&rec.days[d]&&rec.days[d].close)||0;if(dc>0){const c=dc-lc;if(c>0){tUse+=c;tUA+=c*rate;}lc=dc;}}}
+      else if(mode==='manpower'){const days=DIM(mo);for(let d=1;d<=days;d++){const v=(rec.days&&rec.days[d])||'';if(v==='P'){tUse++;tUA+=rate;}}}
+    });
+  });})}
+  document.getElementById('dashKPI').innerHTML=
+    '<div class="kcard kca"><div class="ki">'+cos.length+'</div><div class="kl">Companies</div><div class="kv">'+DB.items.filter(i=>cos.some(c=>c.id===i.companyId)).length+'</div><div class="ks">items tracked</div></div>'+
+    '<div class="kcard kcg"><div class="ki">'+(mo?ML2(mo):'No month')+'</div><div class="kl">Period</div><div class="kv">'+(mo?DIM(mo):'—')+'</div><div class="ks">days</div></div>'+
+    '<div class="kcard kcb"><div class="ki">'+FMN(tOrd||tUse)+'</div><div class="kl">Order/Usage</div><div class="kv">'+FMT(tUA)+'</div><div class="ks">total amount</div></div>'+
+    '<div class="kcard kco"><div class="ki">'+FMN(tCl)+'</div><div class="kl">Closing Stock</div><div class="kv">'+FMN(tUse)+'</div><div class="ks">used this month</div></div>';
+  if(!mo){document.getElementById('dashSum').innerHTML='<div class="empty"><div class="ei">&#x1F4C5;</div>Select a month above</div>';return;}
+  let html='<table class="smtbl"><thead><tr><th>Company</th><th>Category</th><th>Mode</th><th>Vendor</th><th>Items</th><th>Order/Usage</th><th>Present/Closing</th><th>Usage Amount</th></tr></thead><tbody>';
+  cos.forEach(co=>{(catF?[catF]:co.categories).forEach(catId=>{
+    const cat=DB.consumptionTypes.find(c=>c.id===catId);if(!cat)return;
+    const items=DB.items.filter(i=>i.companyId===co.id&&i.categoryId===catId);if(!items.length)return;
+    const mode=cat.mode;
+    const vGroups={};items.forEach(it=>{const vk=it.vendorId||'';if(!vGroups[vk])vGroups[vk]=[];vGroups[vk].push(it);});
+    Object.entries(vGroups).forEach(([vk,vitems])=>{
+      const vnd=DB.vendors.find(v=>v.id===vk);
+      let oU=0,uU=0,clU=0,uA=0,prU=0;
+      vitems.forEach(it=>{const rec=DB.regData[RK(mo,co.id,catId,it.id)]||{};const rate=getRate(it.id,mo);
+        if(mode==='standard'){const ord=rec.order||0,use=Object.values(rec.days||{}).reduce((s,v)=>s+(+v||0),0);oU+=ord;uU+=use;clU+=ord-use;uA+=use*rate;}
+        else if(mode==='electricity'){const days=DIM(mo);let lc=rec.open1||0;for(let d=1;d<=days;d++){const dc=(rec.days&&rec.days[d]&&rec.days[d].close)||0;if(dc>0){const c=dc-lc;if(c>0){uU+=c;uA+=c*rate;}lc=dc;}}}
+        else if(mode==='manpower'){const days=DIM(mo);for(let d=1;d<=days;d++){const v=(rec.days&&rec.days[d])||'';if(v==='P'){prU++;uA+=rate;}}}
+      });
+      html+='<tr><td><span style="display:inline-flex;align-items:center;gap:4px"><span style="width:7px;height:7px;background:'+co.color+';border-radius:50%"></span><strong>'+co.name+'</strong></span></td>'+
+        '<td>'+cat.icon+' '+cat.name+'</td>'+
+        '<td><span class="badge '+(mode==='electricity'?'bc':mode==='manpower'?'bg':'bb')+'">'+mode+'</span></td>'+
+        '<td style="font-size:9px;color:var(--tl)">'+(vnd?vnd.name:'—')+'</td>'+
+        '<td><span class="badge bc">'+vitems.length+'</span></td>'+
+        '<td style="font-weight:600;color:#5c2000">'+(mode==='manpower'?'—':FMN(oU||uU))+'</td>'+
+        '<td style="font-weight:600;color:#2d5c3a">'+(mode==='manpower'?prU+' days':FMN(clU))+'</td>'+
+        '<td>'+FMT(uA)+'</td></tr>';
+    });
+  });});
+  html+='</tbody></table>';
+  document.getElementById('dashSum').innerHTML=html;
+}
+
+// ── REGISTER FILTERS ──
+function onRgCo(){
+  const coId=document.getElementById('rgCo').value;
+  const catSel=document.getElementById('rgCat');catSel.innerHTML='<option value="">-- Select Type --</option>';
+  if(coId){const co=DB.companies.find(c=>c.id===coId);if(co)co.categories.forEach(catId=>{const cat=DB.consumptionTypes.find(c=>c.id===catId);if(cat){const o=document.createElement('option');o.value=catId;o.textContent=cat.icon+' '+cat.name;catSel.appendChild(o);}});}
+  loadReg();
+}
+function onRgCat(){
+  const coId=document.getElementById('rgCo').value;const catId=document.getElementById('rgCat').value;
+  const vw=document.getElementById('rgVW'),fw=document.getElementById('rgFW'),mw=document.getElementById('rgMW');
+  vw.style.display='none';fw.style.display='none';mw.style.display='none';
+  if(!catId||!coId){loadReg();return;}
+  const mode=getCatMode(catId);
+  if(mode==='standard'||mode==='manpower'){
+    const vSel=document.getElementById('rgVendor');
+    const vendors=DB.vendors.filter(v=>(!v.categoryId||v.categoryId===catId)&&(!v.companyId||v.companyId===coId));
+    if(vendors.length){vSel.innerHTML='<option value="">All Vendors</option>'+vendors.map(v=>'<option value="'+v.id+'">'+v.name+'</option>').join('');vw.style.display='';}
+  }
+  if(mode==='electricity'){
+    const items=DB.items.filter(i=>i.companyId===coId&&i.categoryId===catId&&i.itemType==='electricity');
+    const floors=[...new Set(items.map(i=>i.floor||'').filter(Boolean))].sort();
+    const srcs=[...new Set(items.map(i=>i.src||'').filter(Boolean))];
+    const fSel=document.getElementById('rgFloor');fSel.innerHTML='<option value="">All Floors</option>'+floors.map(f=>'<option value="'+f+'">Floor '+f+'</option>').join('');if(floors.length)fw.style.display='';
+    const mSel=document.getElementById('rgMeter');mSel.innerHTML='<option value="">All</option>'+srcs.map(s=>'<option value="'+s+'">'+s+'</option>').join('');if(srcs.length)mw.style.display='';
+  }
+  loadReg();
+}
+
+// ── LOAD REGISTER ──
+function loadReg(){
+  const mo=document.getElementById('rgMo').value;
+  const coId=document.getElementById('rgCo').value;
+  const catId=document.getElementById('rgCat').value;
+  const vendorId=document.getElementById('rgVendor').value;
+  const floorF=document.getElementById('rgFloor').value;
+  const meterF=document.getElementById('rgMeter').value;
+  const banner=document.getElementById('rgBanner');
+  const wrap=document.getElementById('regWrap');
+  const mpLeg=document.getElementById('mpLegend');
+  if(!mo||!coId||!catId){
+    banner.innerHTML='Select Company, Type, and Month to load register.';banner.className='alert ai';
+    wrap.innerHTML='<div class="empty"><div class="ei">&#x1F4CB;</div>Select filters above</div>';
+    document.getElementById('rgTitle').textContent='Consumption Register';document.getElementById('rgBadges').innerHTML='';
+    mpLeg.style.display='none';document.getElementById('btnOrdSec').style.display='none';document.getElementById('ordSec').style.display='none';return;
+  }
+  const co=DB.companies.find(c=>c.id===coId);const cat=DB.consumptionTypes.find(c=>c.id===catId);
+  const mode=cat.mode;const canEdit=can('entry');
+  let items=DB.items.filter(i=>i.companyId===coId&&i.categoryId===catId);
+  if(vendorId)items=items.filter(i=>i.vendorId===vendorId);
+  if(floorF&&mode==='electricity')items=items.filter(i=>i.floor===floorF);
+  if(meterF&&mode==='electricity')items=items.filter(i=>i.src===meterF);
+  const vnd=vendorId?DB.vendors.find(v=>v.id===vendorId):null;
+  document.getElementById('rgTitle').textContent=co.icon+' '+co.name+' - '+cat.icon+' '+cat.name+(vnd?' - '+vnd.name:'')+' - '+ML2(mo);
+  banner.innerHTML=canEdit?(mode==='electricity'?'Enter closing meter readings per day. Opening auto-fills from previous day.':mode==='manpower'?'Click cells to toggle: P / A / H / WO':'Enter daily consumption. Opening stock flows from previous month.'):'View only mode.';
+  banner.className='alert '+(canEdit?'as':'aw');
+  document.getElementById('btnOrdSec').style.display=(mode==='standard'&&can('orders'))?'':'none';
+  mpLeg.style.display=mode==='manpower'?'flex':'none';
+  if(!items.length){wrap.innerHTML='<div class="empty"><div class="ei">&#x1F4E6;</div>No items for these filters.<br><small>Go to Master to add items, employees, or meters.</small></div>';document.getElementById('rgBadges').innerHTML='';document.getElementById('ordSec').style.display='none';return;}
+  if(mode==='electricity')buildElecTable(mo,coId,catId,items,canEdit);
+  else if(mode==='manpower')buildMpTable(mo,coId,catId,items,canEdit);
+  else buildStdTable(mo,coId,catId,items,canEdit);
+  updateBadges(mo,coId,catId,items,mode);
+  if(mode==='standard'&&can('orders')){document.getElementById('ordSec').style.display='block';buildOrdInputs(mo,coId,catId,items);}
+  else document.getElementById('ordSec').style.display='none';
+}
+
+// ── STANDARD TABLE ──
+function getOpenStd(mo,coId,catId,iid){
+  const allMs=DB.months.slice().sort();const idx=allMs.indexOf(mo);
+  if(idx<=0){const rec=DB.regData[RK(mo,coId,catId,iid)]||{};return rec.manualOpen||0;}
+  const prev=allMs[idx-1];const pk=RK(prev,coId,catId,iid);const pr=DB.regData[pk]||{};
+  const pOrd=pr.order||0,pUse=Object.values(pr.days||{}).reduce((s,v)=>s+(+v||0),0);
+  return getOpenStd(prev,coId,catId,iid)+pOrd-pUse;
+}
+function buildStdTable(mo,coId,catId,items,canEdit){
+  const days=DIM(mo);const[y,m]=mo.split('-').map(Number);
+  const tn=new Date();const todayD=(tn.getFullYear()===y&&(tn.getMonth()+1)===m)?tn.getDate():0;
+  let dayTH='';
+  for(let d=1;d<=days;d++){const dw=DOW(y,m,d);const isSat=dw===6,isSun=dw===0;
+    const cls=isSun?'dc-sunH':isSat?'dc-satH':'';const bg=d===todayD?'background:#fffbe6;':'';
+    dayTH+='<th class="dc-day '+cls+'" style="'+bg+'">'+d+'<br><span style="font-size:6px">'+DN[dw]+'</span></th>';}
+  let rows='';let fOpen=0,fOrd=0,fTot=0,fUse=0,fCl=0,fUA=0,fCA=0,fOA=0;
+  let footDays=new Array(days).fill(0);
+  items.forEach(it=>{
+    const key=RK(mo,coId,catId,it.id);const rec=DB.regData[key]||{days:{}};
+    const rate=getRate(it.id,mo);const opU=getOpenStd(mo,coId,catId,it.id);const ordU=rec.order||0;
+    let useU=0;let cells='';
+    for(let d=1;d<=days;d++){const val=(rec.days&&rec.days[d])||0;useU+=val;footDays[d-1]+=val;
+      const dw=DOW(y,m,d);const isSat=dw===6,isSun=dw===0;
+      const bg=(isSun?'background:#fce7e7;':isSat?'background:#dbeafe;':'')+(d===todayD?'background:#fffbe6;':'');
+      if(canEdit){cells+='<td class="dc-day" style="padding:0;'+bg+'"><input type="number" class="dci" min="0" step="0.01" value="'+(val||'')+'" placeholder="" onchange="saveStdDay(\''+key+'\','+d+',this.value)" onfocus="this.select()"/></td>';}
+      else{cells+='<td class="dc-day" style="'+bg+'">'+(val||'')+'</td>';}}
+    const clU=opU+ordU-useU;fOpen+=opU;fOrd+=ordU;fTot+=opU+ordU;fUse+=useU;fCl+=clU;fUA+=useU*rate;fCA+=clU*rate;fOA+=ordU*rate;
+    const vn=getVndName(it.vendorId);
+    rows+='<tr><td class="tl"><strong style="font-size:10px">'+it.name+'</strong>'+(vn?'<br><span style="font-size:7px;color:var(--tl)">'+vn+'</span>':'')+(it.brand?'<br><span style="font-size:7px;color:var(--tl)">'+it.brand+'</span>':'')+'</td>'+
+      '<td class="dc-mo"><span class="badge bb">'+it.unit+'</span></td>'+
+      '<td class="dc-rt">'+FMT(rate)+'</td>'+
+      '<td class="dc-open">'+FMN(opU)+'</td>'+
+      '<td class="dc-ord">'+FMN(ordU)+'</td>'+
+      '<td class="dc-tot">'+FMN(opU+ordU)+'</td>'+
+      cells+
+      '<td class="dc-use">'+FMN(useU)+'</td>'+
+      '<td class="dc-cls">'+FMN(clU)+'</td>'+
+      '<td class="dc-amt">'+FMT(useU*rate)+'</td>'+
+      '<td class="dc-amt">'+FMT(clU*rate)+'</td>'+
+      '<td class="dc-amt">'+FMT(ordU*rate)+'</td></tr>';
+  });
+  const fCells=footDays.map(v=>'<td class="dc-day" style="font-weight:700;font-size:8px">'+(v||'')+'</td>').join('');
+  document.getElementById('regWrap').innerHTML='<table class="rtbl"><thead>'+
+    '<tr class="h1"><th class="tl">Item</th><th class="dc-mo">Unit</th><th class="dc-rt">Rate</th>'+
+    '<th class="dc-open">Opening</th><th class="dc-ord">Order</th><th class="dc-tot">Total Stk</th>'+dayTH+
+    '<th class="dc-use">Usage</th><th class="dc-cls">Closing</th><th class="dc-amt">Used \u20B9</th><th class="dc-amt">Bal \u20B9</th><th class="dc-amt">Ord \u20B9</th></tr>'+
+    '<tr class="h2"><th>Description / Vendor</th><th>UOM</th><th>\u20B9/Unit</th><th>Prev Month Close</th><th>Received</th><th>Available</th>'+
+    Array.from({length:days},(_,i)=>'<th>'+(i+1)+'</th>').join('')+
+    '<th>Total Used</th><th>Balance</th><th>Used \u20B9</th><th>Bal \u20B9</th><th>Ord \u20B9</th></tr></thead>'+
+    '<tbody>'+rows+'</tbody>'+
+    '<tfoot><tr><td colspan="3" style="text-align:left">TOTAL ('+items.length+' items)</td>'+
+    '<td class="dc-open">'+FMN(fOpen)+'</td><td class="dc-ord">'+FMN(fOrd)+'</td><td class="dc-tot">'+FMN(fTot)+'</td>'+fCells+
+    '<td class="dc-use">'+FMN(fUse)+'</td><td class="dc-cls">'+FMN(fCl)+'</td>'+
+    '<td class="dc-amt">'+FMT(fUA)+'</td><td class="dc-amt">'+FMT(fCA)+'</td><td class="dc-amt">'+FMT(fOA)+'</td></tr></tfoot></table>';
+}
+function saveStdDay(key,day,val){
+  if(!DB.regData[key])DB.regData[key]={days:{}};if(!DB.regData[key].days)DB.regData[key].days={};
+  const v=parseFloat(val)||0;if(v===0)delete DB.regData[key].days[day];else DB.regData[key].days[day]=v;save();
+  const mo=document.getElementById('rgMo').value,coId=document.getElementById('rgCo').value,catId=document.getElementById('rgCat').value;
+  updateBadges(mo,coId,catId,DB.items.filter(i=>i.companyId===coId&&i.categoryId===catId),'standard');
+}
+
+// ── ELECTRICITY TABLE ──
+function buildElecTable(mo,coId,catId,items,canEdit){
+  const days=DIM(mo);const[y,m]=mo.split('-').map(Number);
+  const tn=new Date();const todayD=(tn.getFullYear()===y&&(tn.getMonth()+1)===m)?tn.getDate():0;
+  let mCols='';items.forEach(it=>{mCols+='<th colspan="5" style="background:#3a1a06">'+it.name+'</th><th style="background:#3a1a06;min-width:8px"></th>';});
+  let mSub='';items.forEach(()=>{mSub+='<th class="dc-open">Opening</th><th class="ele-cls">Closing</th><th class="ele-con">Consu.</th><th class="dc-rt">Rate</th><th class="ele-amt">Amount</th><th></th>';});
+  let openRow='<tr style="background:#e8f0ff"><td colspan="3" style="text-align:right;padding:4px 8px;font-size:9px;font-weight:700;color:#1a3a8a">Month Start Reading</td>';
+  items.forEach(it=>{const key=RK(mo,coId,catId,it.id);const rec=DB.regData[key]||{};const v=rec.open1||'';
+    if(canEdit){openRow+='<td colspan="2" class="ele-open" style="padding:0"><input type="number" class="elci" value="'+v+'" placeholder="Opening reading" onchange="saveElecOpen(\''+key+'\',this.value)"/></td>';}
+    else{openRow+='<td colspan="2" class="ele-open" style="padding:4px 6px">'+v+'</td>';}
+    openRow+='<td class="ele-con">-</td><td class="dc-rt">'+getRate(it.id,mo)+'</td><td class="ele-amt">-</td><td></td>';});
+  openRow+='</tr>';
+  let rows='';let footCons=new Array(items.length).fill(0),footAmt=new Array(items.length).fill(0);
+  for(let d=1;d<=days;d++){
+    const dw=DOW(y,m,d);const isSat=dw===6,isSun=dw===0;
+    const rowBg=isSun?'background:#fce7e7':isSat?'background:#dbeafe':d===todayD?'background:#fffbe6':'';
+    const dhdr=isSun?'style="color:#991b1b;font-weight:700"':isSat?'style="color:#1e40af;font-weight:700"':'';
+    let mCells='';
+    items.forEach((it,idx)=>{const key=RK(mo,coId,catId,it.id);const rec=DB.regData[key]||{};const rate=getRate(it.id,mo);
+      let openVal=d===1?(rec.open1||0):((rec.days&&rec.days[d-1]&&rec.days[d-1].close)||0);
+      const closeVal=(rec.days&&rec.days[d]&&rec.days[d].close)||0;
+      const cons=closeVal>0?(closeVal-openVal):0;const amt=cons>0?cons*rate:0;
+      if(cons>0){footCons[idx]+=cons;footAmt[idx]+=amt;}
+      if(canEdit){mCells+='<td class="ele-open" style="padding:2px 4px;font-size:9px">'+(openVal||'')+'</td>'+
+        '<td class="ele-cls" style="padding:0"><input type="number" class="elci" value="'+(closeVal||'')+'" placeholder="" onchange="saveElecClose(\''+key+'\','+d+',this.value)" onfocus="this.select()"/></td>'+
+        '<td class="ele-con">'+(cons>0?FMN(cons):'-')+'</td><td class="dc-rt" style="font-size:9px">'+rate+'</td><td class="ele-amt">'+(amt>0?FMT(amt):'-')+'</td><td></td>';}
+      else{mCells+='<td class="ele-open" style="font-size:9px">'+(openVal||'')+'</td><td class="ele-cls" style="font-size:9px">'+(closeVal||'')+'</td><td class="ele-con">'+(cons>0?FMN(cons):'-')+'</td><td class="dc-rt" style="font-size:9px">'+rate+'</td><td class="ele-amt">'+(amt>0?FMT(amt):'-')+'</td><td></td>';}
+    });
+    rows+='<tr style="'+rowBg+'"><td style="font-size:9px;font-weight:700;text-align:center;padding:4px 6px">'+d+'</td>'+
+      '<td style="font-size:9px;font-weight:700;text-align:center;padding:4px 6px" '+dhdr+'>'+DN[dw]+'</td>'+
+      '<td style="font-size:8px;color:var(--tl);text-align:center;padding:4px 5px">'+(new Date(y,m-1,d).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}))+'</td>'+mCells+'</tr>';
+  }
+  let footCols='<td colspan="3" style="text-align:right;font-weight:700;font-size:9px">TOTAL</td>';
+  items.forEach((_,idx)=>{footCols+='<td></td><td class="ele-cls">'+FMN(footCons[idx])+'</td><td class="ele-con">'+FMN(footCons[idx])+'</td><td>-</td><td class="ele-amt">'+FMT(footAmt[idx])+'</td><td></td>';});
+  document.getElementById('regWrap').innerHTML='<table class="rtbl"><thead>'+
+    '<tr class="h1"><th colspan="3" style="text-align:left">Date</th>'+mCols+'</tr>'+
+    '<tr class="h2"><th>Day</th><th>Name</th><th>Date</th>'+mSub+'</tr>'+
+    '</thead><tbody>'+openRow+rows+'</tbody>'+
+    '<tfoot><tr>'+footCols+'</tr></tfoot></table>';
+}
+function saveElecOpen(key,val){if(!DB.regData[key])DB.regData[key]={days:{}};DB.regData[key].open1=parseFloat(val)||0;save();toast('Opening reading saved');}
+function saveElecClose(key,day,val){
+  if(!DB.regData[key])DB.regData[key]={days:{}};if(!DB.regData[key].days)DB.regData[key].days={};
+  const v=parseFloat(val)||0;if(!DB.regData[key].days[day])DB.regData[key].days[day]={};DB.regData[key].days[day].close=v;save();
+  const mo=document.getElementById('rgMo').value,coId=document.getElementById('rgCo').value,catId=document.getElementById('rgCat').value;
+  updateBadges(mo,coId,catId,DB.items.filter(i=>i.companyId===coId&&i.categoryId===catId),'electricity');
+}
+
+// ── MANPOWER TABLE ──
+const MP_CYCLE=['P','A','H','WO',''];
+function buildMpTable(mo,coId,catId,items,canEdit){
+  const days=DIM(mo);const[y,m]=mo.split('-').map(Number);
+  const tn=new Date();const todayD=(tn.getFullYear()===y&&(tn.getMonth()+1)===m)?tn.getDate():0;
+  let dayTH='';
+  for(let d=1;d<=days;d++){const dw=DOW(y,m,d);const isSat=dw===6,isSun=dw===0;
+    const cls=isSun?'dc-sunH':isSat?'dc-satH':'';const bg=d===todayD?'background:#fffbe6;':'';
+    dayTH+='<th class="dc-day '+cls+'" style="'+bg+'">'+d+'<br><span style="font-size:6px">'+DN[dw]+'</span></th>';}
+  let rows='';let totP=0,totA=0,totAmt=0;
+  items.forEach(it=>{
+    const key=RK(mo,coId,catId,it.id);const rec=DB.regData[key]||{days:{}};const rate=getRate(it.id,mo);
+    let pDays=0,aDays=0,cells='';
+    for(let d=1;d<=days;d++){const val=(rec.days&&rec.days[d])||'';
+      if(val==='P')pDays++;if(val==='A')aDays++;
+      const dw=DOW(y,m,d);const isSat=dw===6,isSun=dw===0;
+      let bg=isSun?'background:#fce7e7':isSat?'background:#dbeafe':'';if(d===todayD)bg='background:#fffbe6';
+      if(canEdit){cells+='<td style="padding:0;'+bg+'"><button class="mac'+(val?' mac-'+val:'')+'" onclick="cycleMp(\''+key+'\','+d+',this)">'+(val||'&#xB7;')+'</button></td>';}
+      else{const clr=val==='P'?'#155724':val==='A'?'#721c24':val==='H'?'#0c5460':val==='WO'?'#856404':'var(--tl)';
+        cells+='<td style="'+bg+';font-size:9px;font-weight:700;color:'+clr+'">'+(val||'&#xB7;')+'</td>';}}
+    const amt=pDays*rate;totP+=pDays;totA+=aDays;totAmt+=amt;
+    const vnd=DB.vendors.find(v=>v.id===it.vendorId);
+    rows+='<tr><td class="tl"><strong style="font-size:10px">'+it.name+'</strong>'+
+      (it.designation?'<br><span style="font-size:7px;color:var(--tl)">'+it.designation+'</span>':'')+
+      (it.empId?'<span style="font-size:7px;color:var(--tl);margin-left:5px">'+it.empId+'</span>':'')+'</td>'+
+      '<td style="text-align:center;font-size:8px;color:var(--tl)">'+(vnd?vnd.name:'')+'</td>'+
+      '<td style="text-align:center;font-size:10px">'+FMT(rate)+'/day</td>'+cells+
+      '<td style="font-weight:700;color:#155724;text-align:center">'+pDays+'</td>'+
+      '<td style="font-weight:700;color:#721c24;text-align:center">'+aDays+'</td>'+
+      '<td style="font-weight:700;text-align:center">'+FMT(amt)+'</td></tr>';
+  });
+  document.getElementById('regWrap').innerHTML='<table class="rtbl"><thead>'+
+    '<tr class="h1"><th class="tl">Employee Name</th><th>Agency / Vendor</th><th>Day Rate</th>'+dayTH+
+    '<th style="background:green;color:#fff">Present</th><th style="background:#b83020;color:#fff">Absent</th><th>Amount</th></tr>'+
+    '<tr class="h2"><th>Staff</th><th>Agency</th><th>\u20B9/Day</th>'+
+    Array.from({length:days},(_,i)=>'<th>'+(i+1)+'</th>').join('')+
+    '<th>P Days</th><th>A Days</th><th>\u20B9</th></tr></thead>'+
+    '<tbody>'+rows+'</tbody>'+
+    '<tfoot><tr><td colspan="3" style="text-align:left">TOTAL ('+items.length+')</td>'+
+    Array.from({length:days},()=>'<td></td>').join('')+
+    '<td style="font-weight:700;color:#155724">'+totP+'</td>'+
+    '<td style="font-weight:700;color:#721c24">'+totA+'</td>'+
+    '<td style="font-weight:700">'+FMT(totAmt)+'</td></tr></tfoot></table>';
+}
+function cycleMp(key,day,btn){
+  if(!DB.regData[key])DB.regData[key]={days:{}};if(!DB.regData[key].days)DB.regData[key].days={};
+  const cur=DB.regData[key].days[day]||'';const idx=MP_CYCLE.indexOf(cur);const nxt=MP_CYCLE[(idx+1)%MP_CYCLE.length];
+  if(nxt==='')delete DB.regData[key].days[day];else DB.regData[key].days[day]=nxt;
+  save();btn.textContent=nxt||'\u00B7';btn.className='mac'+(nxt?' mac-'+nxt:'');
+  const mo=document.getElementById('rgMo').value,coId=document.getElementById('rgCo').value,catId=document.getElementById('rgCat').value;
+  updateBadges(mo,coId,catId,DB.items.filter(i=>i.companyId===coId&&i.categoryId===catId),'manpower');
+}
+
+// ── BADGES & ORDERS ──
+function updateBadges(mo,coId,catId,items,mode){
+  let html='';
+  if(mode==='standard'){let tO=0,tU=0,tC=0,tA=0;items.forEach(it=>{const rec=DB.regData[RK(mo,coId,catId,it.id)]||{};const rate=getRate(it.id,mo);const op=getOpenStd(mo,coId,catId,it.id);const ord=rec.order||0,use=Object.values(rec.days||{}).reduce((s,v)=>s+(+v||0),0);tO+=ord;tU+=use;tC+=op+ord-use;tA+=use*rate;});
+    html='<span class="badge ba">Order: '+FMN(tO)+'</span><span class="badge bg">Usage: '+FMN(tU)+'</span><span class="badge bc">Closing: '+FMN(tC)+'</span><span class="badge bb">'+FMT(tA)+'</span>';}
+  else if(mode==='electricity'){let tC=0,tA=0;items.forEach(it=>{const key=RK(mo,coId,catId,it.id);const rec=DB.regData[key]||{};const rate=getRate(it.id,mo);const days=DIM(mo);let lc=rec.open1||0;for(let d=1;d<=days;d++){const dc=(rec.days&&rec.days[d]&&rec.days[d].close)||0;if(dc>0){const c=dc-lc;if(c>0){tC+=c;tA+=c*rate;}lc=dc;}}});
+    html='<span class="badge bc">Total Consumption: '+FMN(tC)+' KWH</span><span class="badge bb">'+FMT(tA)+'</span>';}
+  else if(mode==='manpower'){let tP=0,tA2=0,tAmt=0;items.forEach(it=>{const rec=DB.regData[RK(mo,coId,catId,it.id)]||{};const rate=getRate(it.id,mo);const days=DIM(mo);for(let d=1;d<=days;d++){const v=(rec.days&&rec.days[d])||'';if(v==='P'){tP++;tAmt+=rate;}if(v==='A')tA2++;}});
+    html='<span class="badge bg">Present: '+tP+' days</span><span class="badge br">Absent: '+tA2+' days</span><span class="badge bb">'+FMT(tAmt)+'</span>';}
+  document.getElementById('rgBadges').innerHTML=html;
+}
+function toggleOrdSec(){const s=document.getElementById('ordSec');s.style.display=s.style.display==='none'?'block':'none';}
+function buildOrdInputs(mo,coId,catId,items){
+  document.getElementById('ordInputs').innerHTML='<div class="fg3">'+items.map(it=>{const rec=DB.regData[RK(mo,coId,catId,it.id)]||{};return '<div class="fgrp"><label>'+it.name+' ('+it.unit+')</label><input type="number" min="0" step="0.01" value="'+(rec.order||'')+'" placeholder="0" onchange="saveOrd(\''+RK(mo,coId,catId,it.id)+'\',this.value)"/></div>';}).join('')+'</div>';
+}
+function saveOrd(key,val){if(!DB.regData[key])DB.regData[key]={days:{}};DB.regData[key].order=parseFloat(val)||0;save();toast('Order saved');loadReg();}
+
+// ── MASTER: COMPANIES ──
+function addCompany(){const name=document.getElementById('ncName').value.trim();const full=document.getElementById('ncFull').value.trim();const icon=document.getElementById('ncIcon').value.trim()||'\u{1F3E2}';const color=document.getElementById('ncColor').value;if(!name){toast('Name required');return;}DB.companies.push({id:'co_'+Date.now().toString(36),name,fullName:full||name,icon,color,categories:[]});save();document.getElementById('ncName').value='';renderCoList();refreshAll();toast('Company added');}
+function renderCoList(){document.getElementById('coList').innerHTML=DB.companies.map(co=>'<div class="cocard"><div style="display:flex;align-items:flex-start;gap:9px;flex:1"><div style="width:36px;height:36px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:16px;background:'+co.color+'22">'+co.icon+'</div><div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--br);margin-bottom:3px">'+co.icon+' '+co.name+' <span style="font-size:9px;font-weight:400;color:var(--tl)">'+(co.fullName||'')+'</span></div><div style="font-size:9px;color:var(--tl);margin-bottom:5px">'+DB.items.filter(i=>i.companyId===co.id).length+' items</div><div style="font-size:8px;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Assigned Types:</div><div class="cchips">'+DB.consumptionTypes.map(cat=>{const on=co.categories.includes(cat.id);return '<span class="cchip '+(on?'cchip-on':'cchip-off')+'" style="background:'+(on?cat.color+'ee':'var(--cd)')+';border-color:'+(on?cat.color:'var(--cb)')+';color:'+(on?'#fff':'var(--tl)')+'" onclick="toggleCoType(\''+co.id+'\',\''+cat.id+'\',this)">'+cat.icon+' '+cat.name+'</span>';}).join('')+'</div></div></div><div>'+(DB.companies.length>1?'<button class="btn bdngr bsm" onclick="delCo(\''+co.id+'\')">Del</button>':'')+'</div></div>').join('');}
+function toggleCoType(coId,catId,el){const co=DB.companies.find(c=>c.id===coId);if(!co)return;const cat=DB.consumptionTypes.find(c=>c.id===catId);const idx=co.categories.indexOf(catId);if(idx>=0){co.categories.splice(idx,1);el.className='cchip cchip-off';el.style.cssText='background:var(--cd);border-color:var(--cb);color:var(--tl)';}else{co.categories.push(catId);el.className='cchip cchip-on';if(cat)el.style.cssText='background:'+cat.color+'ee;border-color:'+cat.color+';color:#fff';}save();}
+function delCo(id){const co=DB.companies.find(c=>c.id===id);popup('!','Delete Company?','Delete '+co?.name+' and all data?',()=>{DB.companies=DB.companies.filter(c=>c.id!==id);DB.items=DB.items.filter(i=>i.companyId!==id);Object.keys(DB.regData).forEach(k=>{if(k.split('|')[1]===id)delete DB.regData[k];});save();renderCoList();refreshAll();toast('Deleted');},()=>{});}
+
+// ── MASTER: TYPES ──
+function addType(){const name=document.getElementById('ntName').value.trim();const unit=document.getElementById('ntUnit').value.trim()||'Units';const icon=document.getElementById('ntIcon').value.trim()||'\u{1F4E6}';const mode=document.getElementById('ntMode').value;const color=document.getElementById('ntColor').value;if(!name){toast('Name required');return;}DB.consumptionTypes.push({id:'ct_'+Date.now().toString(36),name,unit,icon,color,mode});save();['ntName','ntUnit','ntIcon'].forEach(f=>{const e=document.getElementById(f);if(e)e.value='';});renderTypeList();renderCoList();refreshAll();toast('Type added: '+name);}
+function renderTypeList(){const el=document.getElementById('typeList');if(!el)return;const ml={standard:'Standard',electricity:'Electricity',manpower:'Manpower'};el.innerHTML='<div class="card"><div class="ch"><h3>All Consumption Types</h3></div><div style="padding:0;overflow-x:auto"><table class="stbl"><thead><tr><th>Icon</th><th>Name</th><th>Unit</th><th>Mode</th><th>Used In</th><th>Color</th><th>Del</th></tr></thead><tbody>'+DB.consumptionTypes.map(cat=>{const used=DB.companies.filter(c=>c.categories.includes(cat.id)).map(c=>c.name).join(', ')||'None';return '<tr><td>'+cat.icon+'</td><td style="text-align:left"><strong>'+cat.name+'</strong></td><td><span class="badge bb">'+cat.unit+'</span></td><td><span class="badge bc">'+(ml[cat.mode]||cat.mode)+'</span></td><td style="font-size:9px;color:var(--tl);text-align:left">'+used+'</td><td><span style="display:inline-block;width:18px;height:18px;background:'+cat.color+';border-radius:4px;vertical-align:middle"></span></td><td><button class="btn bdngr bsm" onclick="delType(\''+cat.id+'\')">Del</button></td></tr>';}).join('')+'</tbody></table></div></div>';}
+function delType(id){if(DB.companies.some(c=>c.categories.includes(id))){toast('Remove from companies first');return;}if(!confirm('Delete?'))return;DB.consumptionTypes=DB.consumptionTypes.filter(c=>c.id!==id);DB.companies.forEach(c=>{c.categories=c.categories.filter(x=>x!==id);});save();renderTypeList();renderCoList();refreshAll();toast('Deleted');}
+
+// ── MASTER: VENDORS ──
+function addVendor(){const name=document.getElementById('nvName').value.trim();const co=document.getElementById('nvCo').value;const cat=document.getElementById('nvCat').value;const contact=document.getElementById('nvContact').value.trim();const gst=document.getElementById('nvGst').value.trim();if(!name){toast('Vendor name required');return;}DB.vendors.push({id:'vnd_'+Date.now().toString(36),name,companyId:co,categoryId:cat,contact,gst});save();['nvName','nvContact','nvGst'].forEach(f=>{const e=document.getElementById(f);if(e)e.value='';});renderVendorList();toast('Vendor added: '+name);}
+function renderVendorList(){const el=document.getElementById('vendorList');if(!el)return;el.innerHTML='<div class="card"><div class="ch"><h3>All Vendors</h3></div><div style="padding:0;overflow-x:auto"><table class="stbl"><thead><tr><th>Vendor Name</th><th>Company</th><th>Type</th><th>Contact</th><th>GST</th><th>Del</th></tr></thead><tbody>'+DB.vendors.map(v=>{const co=DB.companies.find(c=>c.id===v.companyId);const cat=DB.consumptionTypes.find(c=>c.id===v.categoryId);return '<tr><td style="text-align:left"><strong>'+v.name+'</strong></td><td>'+(co?co.name:'All')+'</td><td>'+(cat?cat.icon+' '+cat.name:'All')+'</td><td style="font-size:9px">'+(v.contact||'-')+'</td><td style="font-size:9px">'+(v.gst||'-')+'</td><td><button class="btn bdngr bsm" onclick="delVendor(\''+v.id+'\')">Del</button></td></tr>';}).join('')+'</tbody></table></div></div>';}
+function delVendor(id){if(!confirm('Delete vendor?'))return;DB.vendors=DB.vendors.filter(v=>v.id!==id);save();renderVendorList();toast('Deleted');}
+
+// ── MASTER: ITEMS ──
+function populateItemTabSels(){popCoSel('niCo');popCoSel('ifCo',true);popCatSel('ifCat',true);const ifV=document.getElementById('ifVend');if(ifV)ifV.innerHTML='<option value="">All Vendors</option>'+DB.vendors.map(v=>'<option value="'+v.id+'">'+v.name+'</option>').join('');}
+function filterNiCat(){const coId=document.getElementById('niCo').value;const el=document.getElementById('niCat');el.innerHTML='<option value="">-- Select Type --</option>';if(!coId)return;const co=DB.companies.find(c=>c.id===coId);if(co)co.categories.filter(cid=>getCatMode(cid)==='standard').forEach(catId=>{const cat=DB.consumptionTypes.find(c=>c.id===catId);if(cat){const o=document.createElement('option');o.value=catId;o.textContent=cat.icon+' '+cat.name;el.appendChild(o);}});filterNiVend();}
+function filterNiVend(){const coId=document.getElementById('niCo').value;const catId=document.getElementById('niCat').value;const el=document.getElementById('niVend');el.innerHTML='<option value="">-- None --</option>';DB.vendors.filter(v=>(!v.companyId||v.companyId===coId)&&(!v.categoryId||v.categoryId===catId)).forEach(v=>{const o=document.createElement('option');o.value=v.id;o.textContent=v.name;el.appendChild(o);});}
+function addItem(){const coId=document.getElementById('niCo').value;const catId=document.getElementById('niCat').value;const vendorId=document.getElementById('niVend').value;const name=document.getElementById('niName').value.trim();const brand=document.getElementById('niBrand').value.trim();const unit=document.getElementById('niUnit').value.trim()||'Units';const hsn=document.getElementById('niHsn').value.trim();const rate=parseFloat(document.getElementById('niRate').value)||0;if(!coId||!catId||!name){toast('Company, Type, Name required');return;}DB.items.push({id:'i_'+Date.now().toString(36),companyId:coId,categoryId:catId,vendorId,name,brand,unit,hsn,rate,itemType:'standard'});save();['niName','niBrand','niUnit','niHsn','niRate'].forEach(f=>{const e=document.getElementById(f);if(e)e.value='';});renderItemList();toast('Item added: '+name);}
+function renderItemList(){const coF=document.getElementById('ifCo')?.value||'';const catF=document.getElementById('ifCat')?.value||'';const vF=document.getElementById('ifVend')?.value||'';let items=DB.items.filter(i=>i.itemType==='standard'||!i.itemType);if(coF)items=items.filter(i=>i.companyId===coF);if(catF)items=items.filter(i=>i.categoryId===catF);if(vF)items=items.filter(i=>i.vendorId===vF);document.getElementById('itemsBody').innerHTML=items.map(it=>{const co=DB.companies.find(c=>c.id===it.companyId);const cat=DB.consumptionTypes.find(c=>c.id===it.categoryId);const vnd=DB.vendors.find(v=>v.id===it.vendorId);return '<tr><td style="text-align:left"><strong>'+it.name+'</strong></td><td><span class="badge bb">'+(co?.name||'')+'</span></td><td><span class="badge bc">'+(cat?cat.icon+' '+cat.name:'')+'</span></td><td style="font-size:9px">'+(vnd?vnd.name:'-')+'</td><td style="font-size:9px">'+(it.brand||'-')+'</td><td><span class="badge bb">'+(it.unit||'')+'</span></td><td style="font-size:9px">'+(it.hsn||'-')+'</td><td style="font-weight:700">\u20B9'+(it.rate||0)+'</td><td><button class="btn bdngr bsm" onclick="delItem(\''+it.id+'\')">Del</button></td></tr>';}).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--tl);padding:20px">No items found</td></tr>';}
+function delItem(id){if(!confirm('Delete item?'))return;DB.items=DB.items.filter(i=>i.id!==id);save();renderItemList();toast('Deleted');}
+
+// ── MASTER: EMPLOYEES ──
+function populateEmpTabSels(){popCoSel('neCo');popCoSel('efCo',true);const efC=document.getElementById('efCat');if(efC)efC.innerHTML='<option value="">All Types</option>'+DB.consumptionTypes.filter(c=>c.mode==='manpower').map(c=>'<option value="'+c.id+'">'+c.icon+' '+c.name+'</option>').join('');const efV=document.getElementById('efVend');if(efV)efV.innerHTML='<option value="">All Vendors</option>'+DB.vendors.map(v=>'<option value="'+v.id+'">'+v.name+'</option>').join('');}
+function filterNeCat(){const coId=document.getElementById('neCo').value;const el=document.getElementById('neCat');el.innerHTML='<option value="">-- Select Type --</option>';const co=DB.companies.find(c=>c.id===coId);if(!co)return;co.categories.filter(cid=>getCatMode(cid)==='manpower').forEach(catId=>{const cat=DB.consumptionTypes.find(c=>c.id===catId);if(cat){const o=document.createElement('option');o.value=catId;o.textContent=cat.icon+' '+cat.name;el.appendChild(o);}});filterNeVend();}
+function filterNeVend(){const coId=document.getElementById('neCo').value;const catId=document.getElementById('neCat').value;const el=document.getElementById('neVend');el.innerHTML='<option value="">-- Select Vendor --</option>';DB.vendors.filter(v=>(!v.companyId||v.companyId===coId)&&(!v.categoryId||v.categoryId===catId)).forEach(v=>{const o=document.createElement('option');o.value=v.id;o.textContent=v.name;el.appendChild(o);});}
+function addEmployee(){const coId=document.getElementById('neCo').value;const catId=document.getElementById('neCat').value;const vendorId=document.getElementById('neVend').value;const name=document.getElementById('neName').value.trim();const des=document.getElementById('neDes').value.trim();const eid=document.getElementById('neEid').value.trim();const rate=parseFloat(document.getElementById('neRate').value)||0;if(!coId||!catId||!vendorId||!name){toast('Company, Type, Vendor, Name required');return;}DB.items.push({id:'emp_'+Date.now().toString(36),companyId:coId,categoryId:catId,vendorId,name,designation:des,empId:eid,rate,itemType:'manpower'});save();['neName','neDes','neEid','neRate'].forEach(f=>{const e=document.getElementById(f);if(e)e.value='';});renderEmpList();toast('Employee added: '+name);}
+function renderEmpList(){const coF=document.getElementById('efCo')?.value||'';const catF=document.getElementById('efCat')?.value||'';const vF=document.getElementById('efVend')?.value||'';let emps=DB.items.filter(i=>i.itemType==='manpower');if(coF)emps=emps.filter(i=>i.companyId===coF);if(catF)emps=emps.filter(i=>i.categoryId===catF);if(vF)emps=emps.filter(i=>i.vendorId===vF);document.getElementById('empList').innerHTML='<div class="card"><div class="ch"><h3>All Employees</h3></div><div style="padding:0;overflow-x:auto"><table class="stbl"><thead><tr><th>Name</th><th>Emp ID</th><th>Designation</th><th>Company</th><th>Type</th><th>Vendor</th><th>Day Rate</th><th>Del</th></tr></thead><tbody>'+emps.map(e=>{const co=DB.companies.find(c=>c.id===e.companyId);const cat=DB.consumptionTypes.find(c=>c.id===e.categoryId);const vnd=DB.vendors.find(v=>v.id===e.vendorId);return '<tr><td style="text-align:left"><strong>'+e.name+'</strong></td><td style="font-size:9px">'+(e.empId||'-')+'</td><td style="font-size:9px">'+(e.designation||'-')+'</td><td><span class="badge bb">'+(co?.name||'')+'</span></td><td><span class="badge bc">'+(cat?cat.icon+' '+cat.name:'')+'</span></td><td style="font-size:9px">'+(vnd?vnd.name:'-')+'</td><td style="font-weight:700">\u20B9'+(e.rate||0)+'/day</td><td><button class="btn bdngr bsm" onclick="delEmp(\''+e.id+'\')">Del</button></td></tr>';}).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--tl);padding:20px">No employees found</td></tr>'+'</tbody></table></div></div>';}
+function delEmp(id){if(!confirm('Delete employee?'))return;DB.items=DB.items.filter(i=>i.id!==id);save();renderEmpList();toast('Deleted');}
+
+// ── MASTER: ELECTRICITY ──
+function populateElecTabSels(){popCoSel('nelCo');popCoSel('elfCo',true);const efC=document.getElementById('elfCat');if(efC)efC.innerHTML='<option value="">All Types</option>'+DB.consumptionTypes.filter(c=>c.mode==='electricity').map(c=>'<option value="'+c.id+'">'+c.icon+' '+c.name+'</option>').join('');}
+function filterNelCat(){const coId=document.getElementById('nelCo').value;const el=document.getElementById('nelCat');el.innerHTML='<option value="">-- Select Type --</option>';const co=DB.companies.find(c=>c.id===coId);if(!co)return;co.categories.filter(cid=>getCatMode(cid)==='electricity').forEach(catId=>{const cat=DB.consumptionTypes.find(c=>c.id===catId);if(cat){const o=document.createElement('option');o.value=catId;o.textContent=cat.icon+' '+cat.name;el.appendChild(o);}});}
+function addElecMeter(){const coId=document.getElementById('nelCo').value;const catId=document.getElementById('nelCat').value;const floor=document.getElementById('nelFloor').value.trim();const meterType=document.getElementById('nelMeter').value;const label=document.getElementById('nelLabel').value.trim();const src=document.getElementById('nelSrc').value;const rate=parseFloat(document.getElementById('nelRate').value)||16;if(!coId||!catId||!floor){toast('Company, Type, Floor required');return;}const name=label||(floor+' '+meterType);DB.items.push({id:'elec_'+Date.now().toString(36),companyId:coId,categoryId:catId,vendorId:'',name,brand:'',unit:'KWH',hsn:'',rate,itemType:'electricity',floor,meterType,src});save();['nelFloor','nelLabel','nelRate'].forEach(f=>{const e=document.getElementById(f);if(e)e.value='';});renderElecList();toast('Meter added: '+name);}
+function renderElecList(){const coF=document.getElementById('elfCo')?.value||'';const catF=document.getElementById('elfCat')?.value||'';let meters=DB.items.filter(i=>i.itemType==='electricity');if(coF)meters=meters.filter(i=>i.companyId===coF);if(catF)meters=meters.filter(i=>i.categoryId===catF);document.getElementById('elecList').innerHTML='<div class="card"><div class="ch"><h3>All Electricity Meters</h3></div><div style="padding:0;overflow-x:auto"><table class="stbl"><thead><tr><th>Meter Label</th><th>Floor</th><th>Meter Type</th><th>Source</th><th>Company</th><th>Elec Type</th><th>Rate/KWH</th><th>Del</th></tr></thead><tbody>'+meters.map(m=>{const co=DB.companies.find(c=>c.id===m.companyId);const cat=DB.consumptionTypes.find(c=>c.id===m.categoryId);return '<tr><td style="text-align:left"><strong>'+m.name+'</strong></td><td><span class="badge bc">'+m.floor+'</span></td><td><span class="badge ba">'+m.meterType+'</span></td><td><span class="badge '+(m.src==='DG'?'br':'bg')+'">'+m.src+'</span></td><td style="font-size:9px">'+(co?.name||'')+'</td><td style="font-size:9px">'+(cat?cat.icon+' '+cat.name:'')+'</td><td style="font-weight:700">\u20B9'+(m.rate||0)+'/KWH</td><td><button class="btn bdngr bsm" onclick="delMeter(\''+m.id+'\')">Del</button></td></tr>';}).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--tl);padding:20px">No meters found</td></tr>'+'</tbody></table></div></div>';}
+function delMeter(id){if(!confirm('Delete meter?'))return;DB.items=DB.items.filter(i=>i.id!==id);save();renderElecList();toast('Deleted');}
+
+// ── MASTER: RATES ──
+function filterRatItems(){const coId=document.getElementById('ratCo')?.value||'';const el=document.getElementById('ratIt');if(!el)return;const prev=el.value;el.innerHTML='<option value="">-- Select Item --</option>';DB.items.filter(i=>!coId||i.companyId===coId).forEach(it=>{const o=document.createElement('option');o.value=it.id;o.textContent=it.name;if(it.id===prev)o.selected=true;el.appendChild(o);});}
+function saveRate(){const itemId=document.getElementById('ratIt').value;const mo=document.getElementById('ratMo').value;const r=parseFloat(document.getElementById('ratVal').value);if(!itemId||!mo||isNaN(r)){toast('Fill all fields');return;}if(!DB.rates[itemId])DB.rates[itemId]={};DB.rates[itemId][mo]=r;save();renderRateHist();toast('Rate updated');}
+function renderRateHist(){const el=document.getElementById('rateHist');if(!el)return;const allMs=[...new Set(Object.values(DB.rates).flatMap(r=>Object.keys(r)))].sort();if(!allMs.length){el.innerHTML='<div class="empty">No rate overrides yet. Item default rates apply.</div>';return;}let h='<div class="card"><div class="ch"><h3>Rate History</h3></div><div style="padding:0;overflow-x:auto"><table class="stbl"><thead><tr><th>Item</th><th>Default</th>'+allMs.map(m=>'<th>'+ML2(m)+'</th>').join('')+'</tr></thead><tbody>';DB.items.forEach(it=>{if(!DB.rates[it.id]||!Object.keys(DB.rates[it.id]).length)return;h+='<tr><td style="text-align:left"><strong>'+it.name+'</strong></td><td>\u20B9'+it.rate+'</td>';allMs.forEach(m=>{const r=DB.rates[it.id]?.[m];h+='<td style="background:'+(r?'#fff9e6':'inherit')+'">'+(r?'\u20B9'+r:'-')+'</td>';});h+='</tr>';});el.innerHTML=h+'</tbody></table></div></div>';}
+
+// ── MASTER: MONTHS ──
+function renderMoChips(){document.getElementById('moChips').innerHTML=DB.months.slice().sort().map(m=>'<span class="mchip">'+ML2(m)+'<button onclick="removeMo(\''+m+'\')">x</button></span>').join('');}
+function addMonth(){const v=document.getElementById('addMoInp').value;if(!v){toast('Select month');return;}if(DB.months.includes(v)){toast('Already added');return;}DB.months.push(v);save();renderMoChips();refreshAll();toast(ML2(v)+' added');}
+function addNextMo(){const s=DB.months.slice().sort();let next;if(s.length){const[y,m]=s[s.length-1].split('-').map(Number);next=m===12?(y+1)+'-01':y+'-'+String(m+1).padStart(2,'0');}else{const n=new Date();next=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}if(DB.months.includes(next)){toast('Already added');return;}DB.months.push(next);save();renderMoChips();refreshAll();toast(ML2(next)+' added');}
+function removeMo(m){if(!confirm('Remove '+ML2(m)+'?'))return;DB.months=DB.months.filter(x=>x!==m);save();renderMoChips();refreshAll();}
+
+// ── MASTER: USERS ──
+function togglePerm(el){el.classList.toggle('pc-on');el.classList.toggle('pc-off');}
+function addUser(){const u=document.getElementById('nuU').value.trim().toLowerCase();const p=document.getElementById('nuP').value;const n=document.getElementById('nuN').value.trim();const role=document.getElementById('nuR').value;if(!u||!p||!n){toast('All fields required');return;}if(p.length<4){toast('Password min 4 chars');return;}if(DB.users.find(x=>x.username===u)){toast('Username exists');return;}const perms={};document.querySelectorAll('#permTog .pchip').forEach(ch=>{perms[ch.dataset.p]=ch.classList.contains('pc-on');});DB.users.push({id:'u'+Date.now().toString(36),username:u,password:p,name:n,role,perms});save();renderUserList();['nuU','nuP','nuN'].forEach(f=>{const e=document.getElementById(f);if(e)e.value='';});toast('User added: '+n);}
+function renderUserList(){const el=document.getElementById('userList');if(!el)return;const allP=['dash','reg','master','sync','entry','orders'];el.innerHTML=DB.users.map(u=>{const chips=allP.map(k=>{const has=u.role==='admin'||!!u.perms?.[k];return '<span style="padding:2px 6px;border-radius:100px;font-size:7px;font-weight:700;background:'+(has?'#3d6b4a':'#eee')+';color:'+(has?'#fff':'#aaa')+'">'+(has?'+':'-')+' '+k+'</span>';}).join('');const del=u.id==='u1'?'<span style="font-size:9px;color:var(--tl)">Default</span>':'<button class="btn bdngr bsm" onclick="delUser(\''+u.id+'\')">Del</button>';return '<div style="background:var(--cr);border:1px solid var(--cb);border-radius:var(--rs);padding:9px 12px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:flex-start"><div><strong style="font-size:11px">'+u.name+'</strong><span class="badge '+(u.role==='admin'?'ba':'bg')+'" style="margin-left:5px">'+u.role+'</span><span style="font-size:8px;color:var(--tl);margin-left:4px">@'+u.username+'</span><div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:4px">'+chips+'</div></div><div>'+del+'</div></div>';}).join('');}
+function delUser(id){const u=DB.users.find(x=>x.id===id);if(!confirm('Delete '+u?.name+'?'))return;DB.users=DB.users.filter(x=>x.id!==id);save();renderUserList();toast('Deleted');}
+
+function renderMasterPage(){renderCoList();popCoSel('ratCo');popMSel('ratMo');filterRatItems();renderRateHist();renderMoChips();renderUserList();renderTypeList();}
+
+// ── EXPORT / IMPORT ──
+function buildCSV(moF,coF){
+  const NL='\n';const hdrs=['month','company_id','company_name','category_id','category_name','mode','item_id','item_name','vendor','floor','meter_type','unit','rate','order_qty','open1_reading'];
+  for(let d=1;d<=31;d++)hdrs.push('day'+d);
+  const rows=[];
+  Object.entries(DB.regData).forEach(([key,rec])=>{
+    const[mo,coId,catId,itemId]=key.split('|');if(moF&&mo!==moF)return;if(coF&&coId!==coF)return;
+    const co=DB.companies.find(c=>c.id===coId);const cat=DB.consumptionTypes.find(c=>c.id===catId);const item=DB.items.find(i=>i.id===itemId);if(!co||!cat||!item)return;
+    const vn=getVndName(item.vendorId);const mode=cat.mode;
+    const row=[mo,coId,co.name,catId,cat.name,mode,itemId,item.name,vn,item.floor||'',item.meterType||'',item.unit,getRate(itemId,mo),rec.order||0,rec.open1||0];
+    for(let d=1;d<=31;d++){if(mode==='electricity')row.push((rec.days&&rec.days[d]&&rec.days[d].close)||'');else if(mode==='manpower')row.push((rec.days&&rec.days[d])||'');else row.push((rec.days&&rec.days[d])||'');}
+    rows.push(row);
+  });
+  const esc=v=>{const s=String(v??'');return s.includes(',')||s.includes('"')?'"'+s.replace(/"/g,'""')+'"':s;};
+  return hdrs.join(',')+NL+rows.map(r=>r.map(esc).join(',')).join(NL);
+}
+function doExport(){const mo=document.getElementById('expMo').value;const co=document.getElementById('expCo').value;dlBlob(buildCSV(mo,co),'text/csv','odms_export_'+TODAY+'.csv');document.getElementById('expStat').textContent='Exported at '+new Date().toLocaleTimeString();toast('CSV exported!');}
+function exportDash(){const mo=document.getElementById('dbMo').value;const coId=document.getElementById('navCoSel').value;dlBlob(buildCSV(mo,coId),'text/csv','dash_export.csv');toast('Exported!');}
+function dlTemplate(){const coF=document.getElementById('tplCo').value;const catF=document.getElementById('tplCat').value;const NL='\n';const lines=['month,company_id,company_name,category_id,category_name,mode,item_id,item_name,vendor,unit,rate,order_qty,open1_reading,day1,day2,...,day31','# Standard: qty per day. Manpower: P/A/H/WO. Electricity: closing meter reading per day.',''];const cos=coF?DB.companies.filter(c=>c.id===coF):DB.companies;cos.forEach(co=>{co.categories.filter(cid=>!catF||cid===catF).forEach(catId=>{const cat=DB.consumptionTypes.find(c=>c.id===catId);if(!cat)return;DB.items.filter(i=>i.companyId===co.id&&i.categoryId===catId).forEach(it=>{lines.push([TODAY_M,co.id,co.name,catId,cat.name,cat.mode,it.id,it.name,getVndName(it.vendorId),it.unit,it.rate||0,0,0,...Array(31).fill('')].join(','));});});});dlBlob(lines.join(NL),'text/csv','odms_template.csv');toast('Template downloaded!');}
+function dlBlob(text,mime,name){const b=new Blob([text],{type:mime});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);}
+function importFile(inp){const file=inp.files[0];if(!file)return;const rd=new FileReader();rd.onload=e=>{try{const cnt=file.name.endsWith('.json')?parseJSONData(e.target.result):parseCSVData(e.target.result);save();refreshAll();renderDash();document.getElementById('impStat').innerHTML='Imported <strong>'+cnt+'</strong> records from '+file.name;toast('Imported '+cnt+' records!');}catch(err){toast('Error: '+err.message);}};rd.readAsText(file);inp.value='';}
+async function importUrl(){const url=document.getElementById('impUrl').value.trim();if(!url){toast('Enter a URL');return;}document.getElementById('urlStat').textContent='Fetching...';try{const resp=await fetch(url);if(!resp.ok)throw new Error('HTTP '+resp.status);const text=await resp.text();const cnt=parseCSVData(text);save();refreshAll();renderDash();document.getElementById('urlStat').innerHTML='Imported <strong>'+cnt+'</strong> records';toast('Imported '+cnt+' records!');}catch(err){document.getElementById('urlStat').textContent='Error: '+err.message+' (CORS may block direct fetch - download file first)';toast('Error: '+err.message);}}
+function parseCSVData(text){const lines=text.trim().split(/\r?\n/).filter(l=>l.trim()&&!l.trim().startsWith('#'));if(lines.length<2)return 0;const hdrs=lines[0].split(',').map(x=>x.trim().replace(/^"|"$/g,'').toLowerCase());const get=(row,k)=>{const i=hdrs.indexOf(k);return i>=0?row[i].replace(/^"|"$/g,''):''};let cnt=0;lines.slice(1).forEach(line=>{const row=line.split(',');const mo=get(row,'month'),coId=get(row,'company_id'),catId=get(row,'category_id'),itemId=get(row,'item_id');if(!mo||!coId||!catId||!itemId)return;const key=RK(mo,coId,catId,itemId);if(!DB.regData[key])DB.regData[key]={days:{}};if(!DB.regData[key].days)DB.regData[key].days={};const ord=get(row,'order_qty');if(ord!=='')DB.regData[key].order=parseFloat(ord)||0;const op=get(row,'open1_reading');if(op!=='')DB.regData[key].open1=parseFloat(op)||0;const mode=get(row,'mode')||'standard';for(let d=1;d<=31;d++){const v=get(row,'day'+d);if(v!==''){if(mode==='electricity'){if(!DB.regData[key].days[d])DB.regData[key].days[d]={};DB.regData[key].days[d].close=parseFloat(v)||0;}else if(mode==='manpower')DB.regData[key].days[d]=v;else DB.regData[key].days[d]=parseFloat(v)||0;}}if(!DB.months.includes(mo))DB.months.push(mo);cnt++;});return cnt;}
+function parseJSONData(text){const d=JSON.parse(text);if(d.regData)Object.assign(DB.regData,d.regData);if(d.months)d.months.forEach(m=>{if(!DB.months.includes(m))DB.months.push(m);});return Object.keys(d.regData||{}).length;}
+function backupJSON(){dlBlob(JSON.stringify(DB,null,2),'application/json','odms_backup_'+TODAY+'.json');toast('Backup downloaded!');}
+function restoreJSON(inp){const file=inp.files[0];if(!file)return;const rd=new FileReader();rd.onload=e=>{popup('!','Restore?','Overwrite all current data? Cannot be undone.',()=>{try{Object.assign(DB,JSON.parse(e.target.result));save();location.reload();}catch(er){toast('Error: '+er.message);}},()=>{});};rd.readAsText(file);inp.value='';}
+function resetAll(){popup('!','Reset All Data?','ALL data will be permanently deleted.',()=>{localStorage.removeItem(SK);location.reload();},()=>{});}
+
+function renderSyncPage(){popCoSel('tplCo',true);popCatSel('tplCat',true);popCoSel('expCo',true);popMSel('expMo',true);}
+
+document.addEventListener('keydown',e=>{if(!CU)return;if(e.altKey&&e.key==='d')goPage('dash');if(e.altKey&&e.key==='r')goPage('reg');if(e.altKey&&e.key==='m'&&can('master'))goPage('master');if(e.altKey&&e.key==='s'&&can('sync'))goPage('sync');});
+document.querySelectorAll('#permTog .pchip').forEach(ch=>{ch.addEventListener('click',()=>togglePerm(ch));});
+
+window.addEventListener('load',()=>{const saved=sessionStorage.getItem('cmp_cu');if(saved){try{CU=JSON.parse(saved);showApp();}catch(e){CU=null;}}});
+</script>
+</body>
+</html>
