@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Performance Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --paper:#F6F3EA; --paper-panel:#FCFAF3; --ink:#2B2A25; --ink-soft:#6B6558; --rule:#D9D2BE;
+    --brass:#9C7A34; --brass-deep:#7C601F;
+    --green:#3F6B4A; --green-bg:#E7EEE4;
+    --red:#9B3B3B; --red-bg:#F3E5E2;
+    --amber:#B0812A; --amber-bg:#F3EAD8;
+    --blue:#3B6B8F; --blue-bg:#E4EDF2;
+    --orange:#C1662E; --orange-bg:#F3E1D4;
+    --radius:3px;
+  }
+  [data-theme="dark"]{
+    --paper:#1B1A16; --paper-panel:#242219; --ink:#EDE7D9; --ink-soft:#A79E8A; --rule:#3C382C;
+    --brass:#CBA24E; --brass-deep:#E3BC6C;
+    --green:#7FAF8C; --green-bg:#233028;
+    --red:#D08787; --red-bg:#3A2523;
+    --amber:#D8AE5F; --amber-bg:#3A311E;
+    --blue:#8CB5D0; --blue-bg:#20303A;
+    --orange:#E0996A; --orange-bg:#3A2A1E;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  a{color:inherit;}
+  button{font-family:inherit;cursor:pointer;}
+  .req{color:var(--red);}
+
+  header.top{border-bottom:1px solid var(--rule);background:var(--paper-panel);position:sticky;top:0;z-index:20;}
+  .top-inner{max-width:1300px;margin:0 auto;padding:16px 24px;display:flex;align-items:center;gap:16px;}
+  .seal{width:40px;height:40px;flex:none;border:1.5px solid var(--brass);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--brass);}
+  .seal svg{width:20px;height:20px;}
+  .brand-text{flex:1;min-width:0;}
+  .brand-text h1{font-family:'Lora',serif;font-weight:700;font-size:19px;margin:0;}
+  .top-actions{display:flex;align-items:center;gap:10px;}
+  .btn{border:1px solid var(--rule);background:var(--paper-panel);color:var(--ink);padding:8px 14px;border-radius:var(--radius);font-size:13.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+  .btn:hover{border-color:var(--brass);}
+  .btn-primary{background:var(--brass);border-color:var(--brass);color:#FFFDF7;}
+  .btn-primary:hover{background:var(--brass-deep);border-color:var(--brass-deep);}
+  .btn-ghost{border-color:transparent;background:transparent;padding:8px;}
+  .btn-sm{padding:5px 10px;font-size:12px;}
+  .icon-btn{width:34px;height:34px;padding:0;justify-content:center;border-radius:50%;}
+
+  nav.tabs{max-width:1300px;margin:0 auto;padding:0 24px;display:flex;gap:4px;border-top:1px solid var(--rule);overflow-x:auto;}
+  nav.tabs button{background:none;border:none;padding:11px 6px;margin-right:20px;font-size:13.5px;font-weight:600;color:var(--ink-soft);border-bottom:2px solid transparent;white-space:nowrap;}
+  nav.tabs button.active{color:var(--ink);border-bottom-color:var(--brass);}
+
+  main{max-width:1300px;margin:0 auto;padding:24px;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .filter-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px;padding:12px 14px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--paper-panel);}
+  .filter-bar label{font-size:10.5px;color:var(--ink-soft);font-weight:700;letter-spacing:.3px;display:block;margin-bottom:3px;}
+  .filter-item{display:flex;flex-direction:column;}
+  .filter-bar select, .filter-bar input[type=text], .filter-bar input[type=date]{border:1px solid var(--rule);background:var(--paper);color:var(--ink);padding:7px 9px;border-radius:var(--radius);font-size:12.5px;font-family:inherit;min-width:105px;}
+
+  .kpi-ribbon{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));border:1px solid var(--rule);border-radius:var(--radius);background:var(--paper-panel);overflow:hidden;margin-bottom:10px;}
+  .kpi{padding:12px 10px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);}
+  .kpi .num{font-family:'Lora',serif;font-size:20px;font-weight:700;line-height:1;}
+  .kpi .lbl{font-size:9.5px;color:var(--ink-soft);margin-top:5px;letter-spacing:.2px;}
+  .kpi .num.green{color:var(--green);} .kpi .num.red{color:var(--red);} .kpi .num.amber{color:var(--amber);} .kpi .num.blue{color:var(--blue);}
+  .longest-pending{font-size:12px;color:var(--ink-soft);margin-bottom:18px;}
+  .longest-pending b{color:var(--red);}
+
+  .dash-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;margin-bottom:18px;}
+  @media(max-width:900px){.dash-grid{grid-template-columns:1fr;} .modal-body{grid-template-columns:1fr !important;}}
+
+  .panel{border:1px solid var(--rule);border-radius:var(--radius);background:var(--paper-panel);}
+  .panel-head{padding:14px 18px;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  .panel-head h2{font-family:'Lora',serif;font-size:15px;font-weight:600;margin:0;}
+  .panel-body{padding:14px 18px;}
+
+  .lead-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--rule);}
+  .lead-row:last-child{border-bottom:none;}
+  .rank{width:20px;font-family:'IBM Plex Mono',monospace;color:var(--ink-soft);font-size:12.5px;flex:none;}
+  .avatar{width:32px;height:32px;border-radius:50%;background:var(--rule);display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-weight:700;font-size:12px;color:var(--ink);flex:none;}
+  .avatar.drop-target{border:2px dashed var(--brass);cursor:grab;}
+  .avatar.drop-hover{background:var(--brass);color:#fff;}
+  .lead-info{flex:1;min-width:0;}
+  .lead-info .name{font-weight:600;font-size:13.5px;}
+  .lead-info .sub{font-size:11.5px;color:var(--ink-soft);margin-top:1px;}
+  .stars{color:var(--brass);font-size:13px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;}
+  .lead-counts{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);white-space:nowrap;text-align:right;}
+
+  .pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+  .pill.done{background:var(--green-bg);color:var(--green);}
+  .pill.progress{background:var(--amber-bg);color:var(--amber);}
+  .pill.hold{background:var(--blue-bg);color:var(--blue);}
+  .pill.overdue{background:var(--orange-bg);color:var(--orange);}
+  .pill.delayed{background:var(--red-bg);color:var(--red);}
+  .pill.prio-high{background:var(--red-bg);color:var(--red);}
+  .pill.prio-medium{background:var(--amber-bg);color:var(--amber);}
+  .pill.prio-low{background:var(--green-bg);color:var(--green);}
+  .pill.inactive{background:var(--rule);color:var(--ink-soft);}
+  .pill.muted{background:var(--rule);color:var(--ink-soft);}
+  .late-tag{font-size:10.5px;color:var(--amber);display:block;margin-top:2px;}
+
+  .table-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  .table-toolbar input[type=text], .table-toolbar select{border:1px solid var(--rule);background:var(--paper-panel);color:var(--ink);padding:8px 10px;border-radius:var(--radius);font-size:13px;font-family:inherit;}
+  .table-toolbar .spacer{flex:1;}
+
+  table.register{width:100%;border-collapse:collapse;font-size:12.2px;}
+  table.register thead th{text-align:left;font-size:10.2px;letter-spacing:.3px;color:var(--ink-soft);border-bottom:1px solid var(--rule);padding:8px 6px;font-weight:600;white-space:nowrap;cursor:pointer;}
+  table.register thead th:hover{color:var(--ink);}
+  table.register tbody td{padding:9px 6px;border-bottom:1px solid var(--rule);vertical-align:top;}
+  table.register tbody tr.row-delayed{background:var(--red-bg);}
+  table.register tbody tr:hover{filter:brightness(0.98);}
+  table.register tbody tr.clickable-row{cursor:pointer;}
+  .task-item-cell{max-width:200px;}
+  .task-item-cell .t{font-weight:600;}
+  .person-cell .n{font-weight:600;}
+  .person-cell .d{color:var(--ink-soft);font-size:10.5px;}
+  .row-actions{display:flex;gap:6px;}
+  .row-actions button{background:none;border:1px solid var(--rule);border-radius:var(--radius);width:26px;height:26px;color:var(--ink-soft);padding:0;display:flex;align-items:center;justify-content:center;}
+  .row-actions button:hover{border-color:var(--brass);color:var(--brass);}
+  .row-actions button.updates-row{width:auto;height:auto;padding:4px 9px;background:var(--brass);color:#FFFDF7;border-color:var(--brass);font-weight:700;font-size:11px;}
+  .row-actions button.updates-row:hover{background:var(--brass-deep);color:#FFFDF7;}
+  .empty-state{text-align:center;padding:50px 20px;color:var(--ink-soft);}
+  .progress-mini{width:56px;height:5px;background:var(--rule);border-radius:3px;overflow:hidden;margin-top:3px;}
+  .progress-mini-fill{height:100%;background:var(--brass);}
+
+  .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+  .member-card{border:1px solid var(--rule);border-radius:var(--radius);background:var(--paper-panel);padding:16px;position:relative;}
+  .member-card.inactive{opacity:.55;}
+  .member-card .mtop{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .member-card .name{font-family:'Lora',serif;font-weight:700;font-size:15px;}
+  .member-card .desig{font-size:11.5px;color:var(--ink-soft);}
+  .member-card .meta{font-size:11.5px;color:var(--ink-soft);margin:8px 0;line-height:1.7;}
+  .member-card .meta b{color:var(--ink);font-weight:600;}
+  .member-card .stats{display:flex;gap:16px;margin-top:10px;}
+  .member-card .stats div{font-size:11px;color:var(--ink-soft);}
+  .member-card .stats b{display:block;font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--ink);font-weight:600;}
+  .member-card .card-actions{position:absolute;top:14px;right:14px;display:flex;gap:6px;}
+  .member-card .card-actions button{background:none;border:1px solid var(--rule);border-radius:var(--radius);width:24px;height:24px;color:var(--ink-soft);padding:0;font-size:13px;line-height:1;}
+  .member-card .card-actions button:hover{border-color:var(--brass);color:var(--brass);}
+
+  .modal-back{display:none;position:fixed;inset:0;background:rgba(20,18,12,0.45);z-index:50;align-items:flex-start;justify-content:center;overflow:auto;padding:40px 16px;}
+  .modal-back.open{display:flex;}
+  .modal{background:var(--paper-panel);border:1px solid var(--rule);border-radius:6px;width:100%;max-width:660px;box-shadow:0 10px 40px rgba(0,0,0,0.25);}
+  .modal-head{padding:16px 20px;border-bottom:1px solid var(--rule);display:flex;justify-content:space-between;align-items:center;}
+  .modal-head h3{margin:0;font-family:'Lora',serif;font-size:16px;}
+  .modal-body{padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .field{display:flex;flex-direction:column;gap:5px;position:relative;}
+  .field.full{grid-column:1/-1;}
+  .field label{font-size:11.5px;font-weight:600;color:var(--ink-soft);}
+  .field input,.field select,.field textarea{border:1px solid var(--rule);background:var(--paper);color:var(--ink);padding:9px 10px;border-radius:var(--radius);font-family:inherit;font-size:13.5px;}
+  .field textarea{resize:vertical;min-height:56px;}
+  .field input.dropdown-look{
+    background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B6558' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 10px center; background-size:14px; padding-right:30px; cursor:pointer;
+  }
+  .helper{font-size:11px;color:var(--ink-soft);}
+  .modal-foot{padding:14px 20px;border-top:1px solid var(--rule);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+
+  .picker-list{display:none;position:absolute;top:100%;left:0;right:0;background:var(--paper-panel);border:1px solid var(--rule);border-radius:var(--radius);max-height:180px;overflow-y:auto;z-index:10;box-shadow:0 6px 16px rgba(0,0,0,0.12);}
+  .picker-list.open{display:block;}
+  .picker-opt{padding:8px 10px;font-size:12.5px;cursor:pointer;}
+  .picker-opt:hover{background:rgba(156,122,52,0.12);}
+  .picker-opt .d{color:var(--ink-soft);font-size:11px;}
+  .picker-empty{padding:8px 10px;font-size:12px;color:var(--ink-soft);}
+
+  .list-editor{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .list-chip{display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--rule);border-radius:20px;padding:5px 6px 5px 12px;font-size:12px;}
+  .list-chip.inactive{opacity:.5;}
+  .list-chip button{background:none;border:none;color:var(--ink-soft);width:18px;height:18px;border-radius:50%;font-size:12px;line-height:1;}
+  .list-chip button:hover{color:var(--red);}
+  .list-chip .toggle-chip{color:var(--brass);font-size:14px;}
+  .add-chip-row{display:flex;gap:8px;margin-top:10px;}
+  .add-chip-row input{flex:1;border:1px solid var(--rule);background:var(--paper);padding:8px 10px;border-radius:var(--radius);font-family:inherit;color:var(--ink);}
+
+  table.mgr-table{width:100%;border-collapse:collapse;font-size:12.8px;margin-top:6px;}
+  table.mgr-table th{text-align:left;font-size:10.5px;color:var(--ink-soft);border-bottom:1px solid var(--rule);padding:6px;}
+  table.mgr-table td{padding:7px 6px;border-bottom:1px solid var(--rule);}
+
+  .progress-history{border:1px solid var(--rule);border-radius:var(--radius);max-height:160px;overflow-y:auto;padding:4px 0;}
+  .progress-entry{padding:8px 12px;border-bottom:1px solid var(--rule);font-size:12.5px;}
+  .progress-entry:last-child{border-bottom:none;}
+  .progress-entry .pe-head{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-soft);}
+  .progress-add-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+
+  .admin-locked{text-align:center;padding:60px 20px;color:var(--ink-soft);}
+  .settings-sub{display:none;}
+  .settings-sub.active{display:block;}
+
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:var(--radius);font-size:13px;z-index:100;opacity:0;pointer-events:none;transition:opacity .2s ease;max-width:90vw;text-align:center;}
+  .toast.show{opacity:1;}
+
+  footer.foot{max-width:1300px;margin:30px auto 20px;padding:16px 24px 0;border-top:1px solid var(--rule);color:var(--ink-soft);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  .sync-note{display:flex;align-items:center;gap:6px;}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex:none;}
+  ::-webkit-scrollbar{height:8px;width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--rule);border-radius:4px;}
+</style>
+</head>
+<body data-theme="light">
+
+<header class="top">
+  <div class="top-inner">
+    <div class="seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div>
+    <div class="brand-text"><h1>Performance Dashboard</h1></div>
+    <div class="top-actions">
+      <button class="btn icon-btn" id="themeToggle" title="Toggle dark mode"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg></button>
+      <button class="btn icon-btn" id="refreshBtn" title="Refresh shared data"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M20 10a8 8 0 00-14.9-3.5M4 14a8 8 0 0014.9 3.5"/></svg></button>
+      <button class="btn" id="importEntryBtn">Import / Restore</button>
+      <input type="file" id="importBackupFile" accept=".json" style="display:none;">
+      <button class="btn btn-primary" id="newTaskBtn">+ New Task</button>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-view="dashboard">Dashboard</button>
+    <button class="tab-btn" data-view="register">Task Register</button>
+    <button class="tab-btn" data-view="admin">Settings</button>
+    <button class="tab-btn" data-view="activity">Activity Log</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ================= DASHBOARD ================= -->
+  <section class="view active" id="view-dashboard">
+    <div class="filter-bar">
+      <div class="filter-item"><label>Assigned By</label><select id="fx_assignedBy"><option value="">All</option></select></div>
+      <div class="filter-item"><label>Assigned To</label><select id="fx_assignedTo"><option value="">All</option></select></div>
+      <div class="filter-item"><label>Month</label><select id="fx_month"><option value="">All</option></select></div>
+      <div class="filter-item"><label>Year</label><select id="fx_year"><option value="">All</option></select></div>
+      <div class="filter-item"><label>Status</label><select id="fx_status"><option value="">All</option><option value="pending">Pending</option><option value="progress">In Progress</option><option value="hold">On Hold</option><option value="done">Completed</option><option value="overdue">Overdue</option><option value="delayed">Delayed</option></select></div>
+      <div class="filter-item"><label>Task Type</label><select id="fx_type"><option value="">All</option></select></div>
+      <div class="filter-item"><label>Priority</label><select id="fx_priority"><option value="">All</option><option>High</option><option>Medium</option><option>Low</option></select></div>
+      <button class="btn btn-sm" id="fx_clear">Clear filters</button>
+    </div>
+
+    <div class="kpi-ribbon">
+      <div class="kpi"><div class="num" id="kpiTotal">0</div><div class="lbl">TOTAL</div></div>
+      <div class="kpi"><div class="num green" id="kpiDone">0</div><div class="lbl">COMPLETED</div></div>
+      <div class="kpi"><div class="num" id="kpiPending">0</div><div class="lbl">PENDING</div></div>
+      <div class="kpi"><div class="num amber" id="kpiProgress">0</div><div class="lbl">IN PROGRESS</div></div>
+      <div class="kpi"><div class="num blue" id="kpiHold">0</div><div class="lbl">ON HOLD</div></div>
+      <div class="kpi"><div class="num" id="kpiOverdue" style="color:var(--orange);">0</div><div class="lbl">OVERDUE</div></div>
+      <div class="kpi"><div class="num red" id="kpiDelayed">0</div><div class="lbl">DELAYED</div></div>
+      <div class="kpi"><div class="num" id="kpiCompletion">0%</div><div class="lbl">COMPLETION %</div></div>
+      <div class="kpi"><div class="num" id="kpiAvgTaken">0</div><div class="lbl">AVG DAYS TAKEN</div></div>
+      <div class="kpi"><div class="num" id="kpiAvgElapsed">0</div><div class="lbl">AVG DAYS ELAPSED</div></div>
+    </div>
+    <div class="longest-pending" id="longestPending"></div>
+
+    <div class="panel" style="margin-bottom:18px;border-color:var(--red);">
+      <div class="panel-head"><h2>Delayed / Attention Required</h2><span class="helper" id="thresholdNote"></span></div>
+      <div class="panel-body" id="delayedPanel"></div>
+    </div>
+
+    <div class="dash-grid">
+      <div class="panel">
+        <div class="panel-head"><h2>Workload by employee</h2><span class="helper">drag a task row onto a name to reassign</span></div>
+        <div class="panel-body" id="leaderboard"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Tasks by month and status</h2><span class="helper">click a point to see those tasks</span></div>
+        <div class="panel-body"><canvas id="trendChart" height="185"></canvas></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Work assigned by manager</h2></div>
+      <div class="panel-body" id="managerWorkloadPanel"></div>
+    </div>
+  </section>
+
+  <!-- ================= REGISTER ================= -->
+  <section class="view" id="view-register">
+    <div class="filter-bar">
+      <div class="filter-item"><label>Status</label><select id="rx_status"><option value="">All</option><option value="pending">Pending</option><option value="progress">In Progress</option><option value="hold">On Hold</option><option value="done">Completed</option><option value="overdue">Overdue</option><option value="delayed">Delayed</option></select></div>
+      <div class="filter-item"><label>Assigned By</label><select id="rx_assignedBy"><option value="">All</option></select></div>
+      <div class="filter-item"><label>Assigned To</label><select id="rx_assignedTo"><option value="">All</option></select></div>
+      <div class="filter-item"><label>Task Type</label><select id="rx_type"><option value="">All</option></select></div>
+      <div class="filter-item"><label>Priority</label><select id="rx_priority"><option value="">All</option><option>High</option><option>Medium</option><option>Low</option></select></div>
+      <div class="filter-item"><label>Month</label><select id="rx_month"><option value="">All</option></select></div>
+      <div class="filter-item"><label>Year</label><select id="rx_year"><option value="">All</option></select></div>
+      <div class="filter-item"><label>Assigned on/after</label><input type="date" id="rx_assignedFrom"></div>
+      <div class="filter-item"><label>Due on/after</label><input type="date" id="rx_dueFrom"></div>
+    </div>
+    <div class="table-toolbar">
+      <input type="text" id="searchBox" placeholder="Search task, people, remarks...">
+      <div class="spacer"></div>
+      <button class="btn" id="importBtn">Import Excel</button>
+      <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none;">
+      <button class="btn" id="exportBtn">Export Excel</button>
+    </div>
+    <div class="panel">
+      <div style="overflow-x:auto;">
+        <table class="register" id="registerTable">
+          <thead><tr>
+            <th data-sort="srNo">Task ID</th><th data-sort="taskItem">Task / Title</th><th data-sort="assignedBy">Assigned By</th>
+            <th data-sort="assignedTo">Assigned To</th><th data-sort="taskType">Task Type</th><th data-sort="assignedDate">Assignment Date</th>
+            <th data-sort="dueDate">Due Date</th><th data-sort="priority">Priority</th><th data-sort="status">Status</th>
+            <th data-sort="progress">Progress</th><th>Days Elapsed</th><th>Days Taken</th><th>Delay</th><th data-sort="completionDate">Completion Date</th>
+            <th>Remarks</th><th>Last Updated</th><th></th>
+          </tr></thead>
+          <tbody id="registerBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="registerEmpty" style="display:none;">No tasks match this view yet.</div>
+    </div>
+  </section>
+
+  <!-- ================= ACTIVITY LOG ================= -->
+  <section class="view" id="view-activity">
+    <div class="filter-bar">
+      <div class="filter-item"><label>User</label><select id="ax_user"><option value="">All</option></select></div>
+      <div class="filter-item"><label>Action</label><select id="ax_action"><option value="">All</option></select></div>
+      <div class="filter-item"><label>Module</label><select id="ax_module"><option value="">All</option></select></div>
+      <div class="filter-item"><label>Date From</label><input type="date" id="ax_from"></div>
+      <div class="filter-item"><label>Date To</label><input type="date" id="ax_to"></div>
+      <div class="filter-item"><label>Search</label><input type="text" id="ax_search" placeholder="Task, record..."></div>
+      <button class="btn btn-sm" id="ax_clear">Clear filters</button>
+    </div>
+    <div class="panel">
+      <div style="overflow-x:auto;">
+        <table class="register" id="activityTable">
+          <thead><tr><th>Date &amp; Time</th><th>User</th><th>Role</th><th>Action</th><th>Module</th><th>Record</th><th>Previous</th><th>New</th></tr></thead>
+          <tbody id="activityBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="activityEmpty" style="display:none;">No activity recorded yet.</div>
+    </div>
+  </section>
+
+  <!-- ================= MASTER ADMIN ================= -->
+  <section class="view" id="view-admin">
+    <div id="adminLockedView" class="admin-locked">
+      <div style="margin-bottom:14px;font-family:'Lora',serif;font-size:16px;">Settings</div>
+      <button class="btn btn-primary" id="adminUnlockBtn">Enter Master Key</button>
+      <div class="helper" style="max-width:480px;margin:14px auto 0;">This app has no server, so this key is the strongest practical protection available in a client-side file, not a guarantee against someone editing the source directly. It's stored as a salted PBKDF2-SHA256 hash, never as plain text, and the session auto-locks after 15 minutes of inactivity.</div>
+    </div>
+    <div id="adminUnlockedView" style="display:none;">
+      <div class="panel" style="margin-bottom:18px;">
+        <div class="panel-head"><h2>Session</h2><button class="btn btn-sm" id="adminLockBtn">Lock now</button></div>
+        <div class="panel-body helper">Unlocked for this tab, auto-locks after 15 minutes of inactivity. <a href="#" id="adminChangeKeyLink">Change settings key</a>.</div>
+      </div>
+
+      <div class="seg" id="settingsSubNav" style="margin-bottom:18px;">
+        <button data-sub="members" class="active">Members</button>
+        <button data-sub="managers">Managers</button>
+        <button data-sub="departments">Departments</button>
+        <button data-sub="designations">Designations</button>
+        <button data-sub="tasktypes">Task Types</button>
+        <button data-sub="tasksettings">Task Settings</button>
+        <button data-sub="backup">Backup &amp; Restore</button>
+        <button data-sub="security">Security</button>
+      </div>
+
+      <div class="settings-sub active" id="sub-members">
+        <div class="table-toolbar">
+          <div class="helper" style="flex:1;">Employees who do the work.</div>
+          <button class="btn btn-primary" id="addMemberBtn">+ Add Member</button>
+        </div>
+        <div class="team-grid" id="teamGrid"></div>
+      </div>
+
+      <div class="settings-sub" id="sub-managers">
+        <div class="table-toolbar">
+          <div class="helper" style="flex:1;">People who assign work.</div>
+          <button class="btn btn-primary" id="addManagerBtn">+ Add Manager</button>
+        </div>
+        <div class="team-grid" id="managerGrid"></div>
+      </div>
+
+      <div class="settings-sub" id="sub-departments">
+        <div class="panel">
+          <div class="panel-head"><h2>Department Master</h2></div>
+          <div class="panel-body"><div class="list-editor" id="deptList"></div><div class="add-chip-row"><input type="text" id="newDeptInput" placeholder="Add department"><button class="btn btn-sm" id="addDeptBtn">Add</button></div></div>
+        </div>
+      </div>
+
+      <div class="settings-sub" id="sub-designations">
+        <div class="panel">
+          <div class="panel-head"><h2>Designation Master</h2></div>
+          <div class="panel-body"><div class="list-editor" id="desigList"></div><div class="add-chip-row"><input type="text" id="newDesigInput" placeholder="Add designation"><button class="btn btn-sm" id="addDesigBtn">Add</button></div></div>
+        </div>
+      </div>
+
+      <div class="settings-sub" id="sub-tasktypes">
+        <div class="panel">
+          <div class="panel-head"><h2>Task Type Master</h2></div>
+          <div class="panel-body"><div class="list-editor" id="typeList"></div><div class="add-chip-row"><input type="text" id="newTypeInput" placeholder="Add task type"><button class="btn btn-sm" id="addTypeBtn">Add</button></div></div>
+        </div>
+      </div>
+
+      <div class="settings-sub" id="sub-tasksettings">
+        <div class="panel">
+          <div class="panel-head"><h2>Task Settings</h2></div>
+          <div class="panel-body">
+            <div class="field" style="max-width:220px;"><label>Delay Threshold (days)</label><input type="number" id="delayThresholdInput" min="1" step="1"></div>
+            <div class="helper" style="margin-top:8px;">An incomplete task is flagged Delayed once it has been open longer than this many days. Completed tasks are never retroactively flagged.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-sub" id="sub-backup">
+        <div class="panel">
+          <div class="panel-head"><h2>Backup &amp; Restore</h2></div>
+          <div class="panel-body">
+            <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">
+              <div class="field" style="max-width:220px;"><label>Backup Destination</label>
+                <select id="backupDestination"><option value="download">Browser Download</option><option value="folder">Selected Local Folder</option><option value="server" disabled>Server / Backend Storage (not available)</option></select>
+              </div>
+              <button class="btn btn-sm" id="chooseFolderBtn">Choose folder&hellip;</button>
+              <span class="helper" id="folderStatusNote"></span>
+            </div>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">
+              <div class="field" style="max-width:220px;"><label>Automatic Backup</label>
+                <select id="autoBackupInterval"><option value="off">Manual only</option><option value="5">Every 5 minutes</option><option value="15">Every 15 minutes</option><option value="30">Every 30 minutes</option><option value="60">Every hour</option></select>
+              </div>
+            </div>
+            <div class="helper" style="margin-bottom:12px;">Automatic backup only runs while a local folder is selected for this browser tab, since a page can't silently write files to your computer otherwise, and folder permission doesn't survive a page refresh - you'll need to re-select it after reloading. With "Browser Download" selected, use manual export instead.</div>
+            <button class="btn btn-primary btn-sm" id="exportBackupBtn">Export Backup Now</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-sub" id="sub-security">
+        <div class="panel">
+          <div class="panel-head"><h2>Security</h2></div>
+          <div class="panel-body">
+            <div class="helper" style="margin-bottom:10px;">Reset a member's PIN if they've forgotten it. This clears their current PIN without revealing it.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+              <div class="field" style="max-width:220px;"><label>Member</label><select id="resetPinMember"></select></div>
+              <button class="btn btn-sm" id="resetPinBtn">Reset PIN</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <span>Performance Dashboard</span>
+  <span class="sync-note"><span class="dot"></span> Shared with everyone who opens this dashboard</span>
+</footer>
+
+<!-- ================= IDENTIFY / PIN MODAL ================= -->
+<div class="modal-back" id="idModalBack">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-head"><h3>Confirm it's you</h3><button class="btn btn-ghost icon-btn" id="idModalClose">&times;</button></div>
+    <div class="modal-body" style="grid-template-columns:1fr;">
+      <div class="field"><label>Your name</label><select id="id_name"></select></div>
+      <div class="field"><label id="id_pinLabel">PIN</label><input type="password" id="id_pin" inputmode="numeric" placeholder="4+ digit PIN" autocomplete="off"></div>
+      <div class="field" id="id_confirmField" style="display:none;"><label>Confirm PIN (first time setup)</label><input type="password" id="id_pinConfirm" inputmode="numeric" autocomplete="off"></div>
+      <div class="helper" id="id_hint"></div>
+      <div class="helper">Forgot your PIN? Ask an administrator to reset it from Settings &rarr; Security.</div>
+    </div>
+    <div class="modal-foot"><div style="flex:1;"></div><button class="btn" id="idCancelBtn">Cancel</button><button class="btn btn-primary" id="idContinueBtn">Continue</button></div>
+  </div>
+</div>
+
+<!-- ================= MASTER KEY MODAL ================= -->
+<div class="modal-back" id="mkModalBack">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-head"><h3 id="mkModalTitle">Settings key</h3><button class="btn btn-ghost icon-btn" id="mkModalClose">&times;</button></div>
+    <div class="modal-body" style="grid-template-columns:1fr;">
+      <div class="field"><label id="mk_keyLabel">Master key</label><input type="password" id="mk_key" autocomplete="off"></div>
+      <div class="field" id="mk_confirmField" style="display:none;"><label>Confirm master key</label><input type="password" id="mk_keyConfirm" autocomplete="off"></div>
+      <div class="helper" id="mk_hint"></div>
+    </div>
+    <div class="modal-foot"><div style="flex:1;"></div><button class="btn" id="mkCancelBtn">Cancel</button><button class="btn btn-primary" id="mkContinueBtn">Continue</button></div>
+  </div>
+</div>
+
+<!-- ================= TASK MODAL ================= -->
+<div class="modal-back" id="taskModalBack">
+  <div class="modal">
+    <div class="modal-head"><h3 id="modalTitle">New Task</h3><button class="btn btn-ghost icon-btn" id="modalClose">&times;</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="f_id">
+      <div class="field full"><label>Task / Title <span class="req">*</span></label><input type="text" id="f_taskItem" placeholder="Short task name"></div>
+      <div class="field full"><label>Description <span class="req">*</span></label><textarea id="f_description" placeholder="Full details"></textarea></div>
+      <div class="field" id="pick_assignedBy_wrap"><label>Assigned By <span class="req">*</span></label><input type="text" class="dropdown-look" id="pick_assignedBy" autocomplete="off" placeholder="Select manager"><div class="picker-list" id="list_assignedBy"></div></div>
+      <div class="field" id="pick_assignedTo_wrap"><label>Assigned To <span class="req">*</span></label><input type="text" class="dropdown-look" id="pick_assignedTo" autocomplete="off" placeholder="Select employee"><div class="picker-list" id="list_assignedTo"></div></div>
+      <div class="field"><label>Task Type <span class="req">*</span></label><select id="f_taskType"></select></div>
+      <div class="field"><label>Assignment Date <span class="req">*</span></label><input type="date" id="f_assignedDate"></div>
+      <div class="field"><label>Due Date</label><input type="date" id="f_dueDate"></div>
+      <div class="field"><label>Priority <span class="req">*</span></label><select id="f_priority"><option value="Low">Low</option><option value="Medium" selected>Medium</option><option value="High">High</option></select></div>
+      <div class="field"><label>Status <span class="req">*</span></label><select id="f_status"><option value="pending">Pending</option><option value="progress">In progress</option><option value="hold">On hold</option><option value="done">Completed</option></select></div>
+      <div class="field"><label>Completion Date</label><input type="date" id="f_completionDate"></div>
+      <div class="field full"><label>Remarks</label><textarea id="f_notes"></textarea></div>
+      <div class="field full helper" id="f_metaLine"></div>
+      <div class="field full helper">Use the "Updates" button on this task's row in the Task Register to record work completed and progress.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="deleteTaskBtn" style="color:var(--red);display:none;">Delete task</button>
+      <div style="flex:1;"></div>
+      <button class="btn" id="cancelTaskBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveTaskBtn">Save task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= TASK DETAILS / UPDATES MODAL ================= -->
+<div class="modal-back" id="detailsModalBack">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head"><h3 id="detailsModalTitle">Task Updates</h3><button class="btn btn-ghost icon-btn" id="detailsModalClose">&times;</button></div>
+    <div class="modal-body" style="grid-template-columns:1fr;">
+      <div class="field full" id="detailsOverview" style="font-size:13px;line-height:1.7;"></div>
+      <div class="field full">
+        <label>Progress Timeline</label>
+        <div class="progress-history" id="detailsTimeline"></div>
+      </div>
+      <div class="field full" id="detailsAddUpdateWrap">
+        <label>Add Update</label>
+        <div class="progress-add-row">
+          <div class="field"><label>Update Date <span class="req">*</span></label><input type="date" id="du_date"></div>
+          <div class="field"><label>Progress % (added) <span class="req">*</span></label><input type="number" id="du_delta" min="1" max="100" step="5" placeholder="e.g. 20"></div>
+          <div class="field full"><label>Remark / Update Note <span class="req">*</span></label><input type="text" id="du_note" placeholder="What did you complete?"></div>
+        </div>
+        <div class="helper" id="du_remainingNote" style="margin-top:6px;"></div>
+        <button class="btn btn-sm btn-primary" id="addUpdateBtn" style="margin-top:8px;">Add Update</button>
+      </div>
+      <div class="field full helper" id="detailsCompletedNote" style="display:none;color:var(--green);font-weight:600;"></div>
+    </div>
+    <div class="modal-foot"><div style="flex:1;"></div><button class="btn" id="detailsCloseBtn">Close</button></div>
+  </div>
+</div>
+
+<!-- ================= MEMBER MODAL ================= -->
+<div class="modal-back" id="memberModalBack">
+  <div class="modal">
+    <div class="modal-head"><h3 id="memberModalTitle">Add Member</h3><button class="btn btn-ghost icon-btn" id="memberModalClose">&times;</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="m_originalName">
+      <div class="field"><label>Member Name</label><input type="text" id="m_name"></div>
+      <div class="field"><label>Employee ID</label><input type="text" id="m_empId"></div>
+      <div class="field"><label>Designation</label><select id="m_designation"></select></div>
+      <div class="field"><label>Role / Responsibility</label><input type="text" id="m_role"></div>
+      <div class="field"><label>Department</label><select id="m_department"></select></div>
+      <div class="field"><label>Location</label><input type="text" id="m_location"></div>
+      <div class="field"><label>Status</label><select id="m_status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="deleteMemberBtn" style="color:var(--red);display:none;">Deactivate</button>
+      <div style="flex:1;"></div>
+      <button class="btn" id="cancelMemberBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveMemberBtn">Save member</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MANAGER MODAL ================= -->
+<div class="modal-back" id="managerModalBack">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head"><h3 id="managerModalTitle">Add Manager</h3><button class="btn btn-ghost icon-btn" id="managerModalClose">&times;</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="g_originalName">
+      <div class="field full"><label>Manager Name</label><input type="text" id="g_name"></div>
+      <div class="field"><label>Employee ID</label><input type="text" id="g_empId"></div>
+      <div class="field"><label>Designation</label><select id="g_designation"></select></div>
+      <div class="field"><label>Department</label><select id="g_department"></select></div>
+      <div class="field"><label>Status</label><select id="g_status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="deleteManagerBtn" style="color:var(--red);display:none;">Delete</button>
+      <button class="btn" id="deactivateManagerBtn" style="display:none;">Deactivate</button>
+      <div style="flex:1;"></div>
+      <button class="btn" id="cancelManagerBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveManagerBtn">Save manager</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "performance-dashboard-v5";
+  var MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var MONTH_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var STATUS = { PENDING:"pending", PROGRESS:"progress", HOLD:"hold", DONE:"done" };
+  var ADMIN_TIMEOUT_MS = 15*60*1000;
+
+  var state = {
+    tasks: [], members: [], managers: [],
+    departments: [{name:"Admin",status:"Active"},{name:"Facilities",status:"Active"},{name:"Procurement",status:"Active"},{name:"Operations",status:"Active"},{name:"IT / Systems",status:"Active"},{name:"Administration",status:"Active"}],
+    designations: [{name:"Manager",status:"Active"},{name:"Senior Manager",status:"Active"},{name:"Assistant Manager",status:"Active"},{name:"Executive",status:"Active"},{name:"Senior Executive",status:"Active"},{name:"Coordinator",status:"Active"},{name:"Admin Executive",status:"Active"},{name:"Department Manager",status:"Active"}],
+    taskTypes: [{name:"Documentation",status:"Active"},{name:"Data / Excel Work",status:"Active"},{name:"Coordination",status:"Active"},{name:"Follow-up",status:"Active"},{name:"Reporting",status:"Active"},{name:"Other",status:"Active"}],
+    settings: { delayThresholdDays: 15, backupDestination:"download", autoBackupInterval:"off" },
+    activityLog: [], pins: {}, masterCred: null
+  };
+
+  var masterUnlocked = false;
+  var currentAuthedName = null;
+  var idState = { onSuccess: null, lastUsedName: null };
+  var mkState = { onSuccess: null };
+  var adminTimeoutHandle = null;
+  var autoBackupHandle = null;
+  var backupDirHandle = null;
+  var draggedTaskId = null;
+  var pickerValues = { assignedBy:"", assignedTo:"" };
+  var trendChartData = null;
+
+  function uid(p){ return (p||"t") + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function pad2(n){ return n < 10 ? "0"+n : ""+n; }
+  function toISO(d){ if(!d) return ""; if(typeof d === "string") return d; return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
+  function parseISO(s){ if(!s) return null; var p=s.split("-"); if(p.length!==3) return null; return new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10)); }
+  function fmtDate(s){ var d=parseISO(s); if(!d) return "-"; return d.getDate()+" "+MONTH_NAMES[d.getMonth()]+" "+d.getFullYear(); }
+  function fmtDateTime(iso){ if(!iso) return "-"; var d=new Date(iso); var h=d.getHours(); var ampm=h>=12?"PM":"AM"; var h12=h%12; if(h12===0) h12=12; return d.getDate()+" "+MONTH_NAMES[d.getMonth()]+" "+d.getFullYear()+", "+h12+":"+pad2(d.getMinutes())+" "+ampm; }
+  function daysBetween(a,b){ if(!a||!b) return null; return Math.round((b.getTime()-a.getTime())/86400000); }
+  function todayISO(){ return toISO(new Date()); }
+  function monthOfTask(t){ var d=parseISO(t.assignedDate); return d?d.getMonth():null; }
+  function yearOfTask(t){ var d=parseISO(t.assignedDate); return d?d.getFullYear():null; }
+  function escapeHtml(s){ if(s===null||s===undefined) return ""; return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function showToast(msg){ var t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(function(){ t.classList.remove("show"); },2600); }
+  function findMember(name){ for(var i=0;i<state.members.length;i++){ if(state.members[i].name===name) return state.members[i]; } return null; }
+  function findManager(name){ for(var i=0;i<state.managers.length;i++){ if(state.managers[i].name===name) return state.managers[i]; } return null; }
+  function activeMembers(){ return state.members.filter(function(m){ return m.status !== "Inactive"; }); }
+  function activeManagers(){ return state.managers.filter(function(m){ return m.status !== "Inactive"; }); }
+
+  // ---------------- generic master-list (name+status) helpers ----------------
+  function activeNames(list){ return list.filter(function(x){return x.status!=="Inactive";}).map(function(x){return x.name;}); }
+  function findInList(list, name){ for(var i=0;i<list.length;i++){ if(list[i].name===name) return list[i]; } return null; }
+  function buildMasterSelect(selectEl, list, currentValue){
+    var names = activeNames(list);
+    if(currentValue && names.indexOf(currentValue)===-1) names = names.concat([currentValue]);
+    selectEl.innerHTML = '<option value="">-</option>' + names.map(function(n){
+      var item = findInList(list, n);
+      var suffix = item && item.status==="Inactive" ? " (inactive)" : "";
+      return '<option value="'+escapeHtml(n)+'">'+escapeHtml(n+suffix)+'</option>';
+    }).join("");
+    selectEl.value = currentValue || "";
+  }
+  function buildFilterOptionsFromMaster(selectEl, list, extraValues){
+    var names = {}; activeNames(list).forEach(function(n){names[n]=true;}); (extraValues||[]).forEach(function(n){ if(n) names[n]=true; });
+    var cur = selectEl.value;
+    selectEl.innerHTML = '<option value="">All</option>' + Object.keys(names).sort().map(function(n){return '<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>';}).join("");
+    selectEl.value = cur;
+  }
+  function renderChipList(containerId, listKey, moduleLabel){
+    var list = state[listKey];
+    var el = document.getElementById(containerId);
+    el.innerHTML = list.map(function(item){
+      var inactive = item.status === "Inactive";
+      return '<span class="list-chip'+(inactive?" inactive":"")+'" data-name="'+escapeHtml(item.name)+'">'+escapeHtml(item.name)+(inactive?" (inactive)":"")+
+        '<button class="toggle-chip" data-action="toggle" title="'+(inactive?"Activate":"Deactivate")+'">&#8635;</button>'+
+        '<button data-action="delete" title="Delete">&times;</button></span>';
+    }).join("");
+    Array.prototype.forEach.call(el.querySelectorAll("button"), function(btn){
+      btn.addEventListener("click", function(){
+        var chip = btn.closest(".list-chip"); var name = chip.getAttribute("data-name");
+        var item = findInList(list, name);
+        if(btn.getAttribute("data-action")==="toggle"){
+          var old = item.status; item.status = old==="Inactive" ? "Active" : "Inactive";
+          logActivity("Admin","Admin", moduleLabel+" "+(item.status==="Inactive"?"Deactivated":"Activated"), moduleLabel, name, old, item.status);
+        } else {
+          var inUse = state.tasks.some(function(t){ return t.taskType===name; }) || state.members.some(function(m){return m.designation===name||m.department===name;}) || state.managers.some(function(m){return m.designation===name||m.department===name;});
+          if(inUse && !confirm('"'+name+'" is used on existing records. Delete anyway? Historical records keep showing it.')) return;
+          if(!inUse && !confirm('Delete "'+name+'"?')) return;
+          state[listKey] = list.filter(function(x){ return x.name !== name; });
+          logActivity("Admin","Admin", moduleLabel+" Deleted", moduleLabel, name, name, "-");
+        }
+        refreshThenSave(function(){}).then(renderAll);
+      });
+    });
+  }
+
+  // ---------------- crypto (Web Crypto API - real PBKDF2-SHA256 / SHA-256) ----------------
+  function bufToHex(buf){ return Array.prototype.map.call(new Uint8Array(buf), function(b){ return ("0"+b.toString(16)).slice(-2); }).join(""); }
+  function hexToBuf(hex){ var arr=new Uint8Array(hex.length/2); for(var i=0;i<arr.length;i++){ arr[i]=parseInt(hex.substr(i*2,2),16); } return arr.buffer; }
+  function randomSaltHex(){ var arr=new Uint8Array(16); crypto.getRandomValues(arr); return bufToHex(arr.buffer); }
+  var hasSubtle = (typeof window.crypto !== "undefined" && window.crypto.subtle);
+  function deriveHash(secret, saltHex){
+    if(!hasSubtle) return Promise.resolve(saltHex + ":" + secret.length);
+    var enc = new TextEncoder();
+    return crypto.subtle.importKey("raw", enc.encode(secret), {name:"PBKDF2"}, false, ["deriveBits"]).then(function(keyMaterial){
+      return crypto.subtle.deriveBits({ name:"PBKDF2", salt: hexToBuf(saltHex), iterations: 100000, hash:"SHA-256" }, keyMaterial, 256);
+    }).then(function(bits){ return bufToHex(bits); });
+  }
+  function hashSecret(secret){ var salt = randomSaltHex(); return deriveHash(secret, salt).then(function(hash){ return { salt:salt, hash:hash }; }); }
+  function verifySecret(secret, record){ if(!record) return Promise.resolve(false); return deriveHash(secret, record.salt).then(function(hash){ return hash === record.hash; }); }
+  function sha256Hex(str){
+    if(!hasSubtle) return Promise.resolve("nohash");
+    var enc = new TextEncoder();
+    return crypto.subtle.digest("SHA-256", enc.encode(str)).then(function(buf){ return bufToHex(buf); });
+  }
+
+  function logActivity(userName, userRole, actionType, module, recordName, previous, newVal){
+    state.activityLog.unshift({ id: uid("a"), dateTime: new Date().toISOString(), userName: userName||"Unknown", userRole: userRole||"Member",
+      actionType: actionType, module: module||"", recordName: recordName||"",
+      previousValue: previous===undefined||previous===null?"-":String(previous), newValue: newVal===undefined||newVal===null?"-":String(newVal) });
+    if(state.activityLog.length > 1200) state.activityLog = state.activityLog.slice(0,1200);
+  }
+
+  // ---------------- storage ----------------
+  function normalizeMembers(raw){ if(!raw||!raw.length) return []; return raw.map(function(m){ if(typeof m==="string") return {name:m,employeeId:"",designation:"",role:"",department:"",location:"",status:"Active"}; return {name:m.name||"",employeeId:m.employeeId||"",designation:m.designation||"",role:m.role||"",department:m.department||"",location:m.location||"",status:m.status||"Active"}; }); }
+  function normalizeManagers(raw){ if(!raw||!raw.length) return []; return raw.map(function(m){ return {name:m.name||"",employeeId:m.employeeId||"",designation:m.designation||"",department:m.department||"",status:m.status||"Active"}; }); }
+  function normalizeMasterList(raw, defaults){ if(!raw||!raw.length) return defaults; return raw.map(function(x){ if(typeof x==="string") return {name:x,status:"Active"}; return {name:x.name,status:x.status||"Active"}; }); }
+
+  function loadData(){
+    return window.storage.get(STORAGE_KEY, true).then(function(res){
+      if(res && res.value){
+        try{
+          var p = JSON.parse(res.value);
+          state.tasks = p.tasks || [];
+          state.members = normalizeMembers(p.members);
+          state.managers = normalizeManagers(p.managers);
+          state.departments = normalizeMasterList(p.departments, state.departments);
+          state.designations = normalizeMasterList(p.designations, state.designations);
+          state.taskTypes = normalizeMasterList(p.taskTypes, state.taskTypes);
+          state.settings = p.settings || state.settings;
+          state.activityLog = p.activityLog || [];
+          state.pins = p.pins || {};
+          state.masterCred = p.masterCred || null;
+        }catch(e){ console.error(e); }
+      }
+    }).catch(function(err){ console.error(err); });
+  }
+  function currentDataSnapshot(){
+    return { tasks:state.tasks, members:state.members, managers:state.managers, departments:state.departments, designations:state.designations, taskTypes:state.taskTypes, settings:state.settings, activityLog:state.activityLog, pins:state.pins, masterCred:state.masterCred };
+  }
+  function saveData(){
+    var payload = JSON.stringify(Object.assign(currentDataSnapshot(), { updatedAt:new Date().toISOString() }));
+    return window.storage.set(STORAGE_KEY, payload, true).catch(function(err){ console.error(err); showToast("Could not sync to shared storage."); });
+  }
+  function refreshThenSave(mutator){
+    return window.storage.get(STORAGE_KEY, true).then(function(res){
+      var remote = currentDataSnapshot();
+      if(res && res.value){ try{ remote = JSON.parse(res.value); }catch(e){} }
+      var remoteMembers = normalizeMembers(remote.members);
+      var localNames = state.members.map(function(m){return m.name;});
+      remoteMembers.forEach(function(rm){ if(localNames.indexOf(rm.name)===-1) state.members.push(rm); });
+      var remoteManagers = normalizeManagers(remote.managers);
+      var localMgrNames = state.managers.map(function(m){return m.name;});
+      remoteManagers.forEach(function(rm){ if(localMgrNames.indexOf(rm.name)===-1) state.managers.push(rm); });
+      var remotePins = remote.pins || {};
+      Object.keys(remotePins).forEach(function(k){ if(!state.pins[k]) state.pins[k] = remotePins[k]; });
+      if(!state.masterCred && remote.masterCred) state.masterCred = remote.masterCred;
+      ["departments","designations","taskTypes"].forEach(function(key){
+        var remoteList = normalizeMasterList(remote[key], []);
+        var localNamesK = state[key].map(function(x){return x.name;});
+        remoteList.forEach(function(r){ if(localNamesK.indexOf(r.name)===-1) state[key].push(r); });
+      });
+      var byId = {}; (remote.tasks||[]).forEach(function(t){ byId[t.id]=t; }); state.tasks.forEach(function(t){ byId[t.id]=t; });
+      state.tasks = Object.keys(byId).map(function(k){ return byId[k]; });
+      var logById = {}; (remote.activityLog||[]).forEach(function(l){ logById[l.id]=l; }); state.activityLog.forEach(function(l){ logById[l.id]=l; });
+      state.activityLog = Object.keys(logById).map(function(k){ return logById[k]; }).sort(function(a,b){ return new Date(b.dateTime)-new Date(a.dateTime); }).slice(0,1200);
+      mutator();
+      return saveData();
+    }).catch(function(err){ console.error(err); mutator(); return saveData(); });
+  }
+
+  // ---------------- task metrics (single source of truth) ----------------
+  function taskMetrics(t){
+    var assigned = parseISO(t.assignedDate);
+    var due = parseISO(t.dueDate);
+    var completion = parseISO(t.completionDate);
+    var isDone = t.status === STATUS.DONE;
+    var daysTaken = (isDone && assigned && completion) ? daysBetween(assigned, completion) : null;
+    var daysElapsed = (!isDone && assigned) ? daysBetween(assigned, new Date()) : null;
+    var isOverdue = !isDone && due ? daysBetween(due, new Date()) > 0 : false;
+    var threshold = state.settings.delayThresholdDays || 15;
+    var isDelayed = !isDone && daysElapsed !== null && daysElapsed > threshold;
+    var completedLate = isDone && due && completion ? completion > due : false;
+    return { daysTaken:daysTaken, daysElapsed:daysElapsed, isOverdue:isOverdue, isDelayed:isDelayed, completedLate:completedLate, threshold:threshold };
+  }
+  function statusLabelClass(t){
+    var m = taskMetrics(t);
+    if(m.isDelayed) return { label:"Delayed", cls:"delayed", key:"delayed" };
+    if(t.status === STATUS.DONE) return { label:"Completed", cls:"done", key:"done" };
+    if(t.status === STATUS.HOLD) return { label:"On Hold", cls:"hold", key:"hold" };
+    if(m.isOverdue) return { label:"Overdue", cls:"overdue", key:"overdue" };
+    if(t.status === STATUS.PENDING) return { label:"Pending", cls:"progress", key:"pending" };
+    return { label:"In Progress", cls:"progress", key:"progress" };
+  }
+  function isDelayedFlag(t){ return taskMetrics(t).isDelayed; }
+  function matchesStatusFilter(t, statusVal){
+    if(!statusVal) return true;
+    var sc = statusLabelClass(t);
+    if(statusVal === "delayed") return sc.key === "delayed";
+    if(statusVal === "overdue") return sc.key === "overdue";
+    if(statusVal === STATUS.DONE) return sc.key === "done";
+    return sc.key === statusVal;
+  }
+
+  // ---------------- searchable picker (reusable, pool-driven) ----------------
+  function wirePicker(inputId, listId, poolFn, getHiddenValue, setHiddenValue){
+    var input = document.getElementById(inputId);
+    var list = document.getElementById(listId);
+    function optionsFor(q){ q=(q||"").toLowerCase(); return poolFn().filter(function(m){ return m.name.toLowerCase().indexOf(q)!==-1; }); }
+    function renderList(q){
+      var opts = optionsFor(q);
+      list.innerHTML = opts.length ? opts.map(function(m){
+        return '<div class="picker-opt" data-name="'+escapeHtml(m.name)+'">'+escapeHtml(m.name)+(m.designation?' <span class="d">&mdash; '+escapeHtml(m.designation)+'</span>':'')+'</div>';
+      }).join("") : '<div class="picker-empty">No matching name</div>';
+      list.classList.add("open");
+      Array.prototype.forEach.call(list.querySelectorAll(".picker-opt"), function(opt){
+        opt.addEventListener("mousedown", function(e){ e.preventDefault(); var name=opt.getAttribute("data-name"); setHiddenValue(name); input.value=name; list.classList.remove("open"); });
+      });
+    }
+    input.addEventListener("focus", function(){ renderList(input.value === getHiddenValue() ? "" : input.value); });
+    input.addEventListener("input", function(){ setHiddenValue(""); renderList(input.value); });
+    input.addEventListener("blur", function(){ setTimeout(function(){ list.classList.remove("open"); if(!getHiddenValue()) input.value=""; },150); });
+  }
+  function pickerSet(f,v){ pickerValues[f]=v; }
+  function pickerGet(f){ return pickerValues[f]||""; }
+  function setPickerDisplay(f,name){ pickerValues[f]=name||""; document.getElementById("pick_"+f).value = name||""; }
+
+  // ---------------- filter option builders ----------------
+  function buildYearOptions(sel){ var years={}; state.tasks.forEach(function(t){var y=yearOfTask(t); if(y) years[y]=true;}); var now=new Date().getFullYear(); years[now]=true; years[now+1]=true; var list=Object.keys(years).map(Number).sort(); var cur=sel.value; sel.innerHTML='<option value="">All</option>'+list.map(function(y){return '<option value="'+y+'">'+y+'</option>';}).join(""); sel.value=cur; }
+  function buildMonthOptions(sel){ var cur=sel.value; sel.innerHTML='<option value="">All</option>'+MONTH_FULL.map(function(m,i){return '<option value="'+i+'">'+m+'</option>';}).join(""); sel.value=cur; }
+  function buildMemberOptions(sel){ var cur=sel.value; sel.innerHTML='<option value="">All</option>'+activeMembers().map(function(m){return '<option value="'+escapeHtml(m.name)+'">'+escapeHtml(m.name)+'</option>';}).join(""); sel.value=cur; }
+  function buildManagerOptions(sel){ var cur=sel.value; sel.innerHTML='<option value="">All</option>'+activeManagers().map(function(m){return '<option value="'+escapeHtml(m.name)+'">'+escapeHtml(m.name)+'</option>';}).join(""); sel.value=cur; }
+
+  // ---------------- rating ----------------
+  function ratingForMember(name, tasks){
+    var mine = tasks.filter(function(t){ return t.assignedTo === name; });
+    var completed = mine.filter(function(t){ return t.status === STATUS.DONE; });
+    var openCount = mine.filter(function(t){ return t.status !== STATUS.DONE; }).length;
+    if(completed.length === 0) return { stars:0, onTimeRate:null, avgTaken:null, completed:0, total:mine.length, open:openCount };
+    var onTimeCount=0, speedSum=0, speedN=0;
+    completed.forEach(function(t){
+      var m = taskMetrics(t);
+      if(!m.completedLate) onTimeCount++;
+      var due=parseISO(t.dueDate), assigned=parseISO(t.assignedDate);
+      if(due && assigned && m.daysTaken !== null){ var planned=daysBetween(assigned,due); if(planned>0){ speedSum += Math.min(planned/Math.max(m.daysTaken,1),1.25); speedN++; } }
+    });
+    var onTimeRate = onTimeCount/completed.length;
+    var speedScore = speedN ? (speedSum/speedN)/1.25 : onTimeRate;
+    var score = onTimeRate*0.6 + speedScore*0.4;
+    var stars = Math.max(0, Math.min(5, Math.round(score*5*2)/2));
+    var avgTaken = completed.reduce(function(s,t){ return s+(taskMetrics(t).daysTaken||0); },0)/completed.length;
+    return { stars:stars, onTimeRate:onTimeRate, avgTaken:avgTaken, completed:completed.length, total:mine.length, open:openCount };
+  }
+  function starString(stars){ var full=Math.floor(stars); var half=(stars-full)>=0.5; var s=""; for(var i=0;i<full;i++) s+="\u2605"; if(half) s+="\u00BD"; var empty=5-full-(half?1:0); for(var j=0;j<empty;j++) s+="\u2606"; return s; }
+
+  // ================= DASHBOARD =================
+  var trendChartInstance = null;
+
+  function getDashFilters(){
+    return { assignedTo:document.getElementById("fx_assignedTo").value, assignedBy:document.getElementById("fx_assignedBy").value, month:document.getElementById("fx_month").value, year:document.getElementById("fx_year").value, status:document.getElementById("fx_status").value, type:document.getElementById("fx_type").value, priority:document.getElementById("fx_priority").value };
+  }
+  function dashboardTasks(){
+    var f = getDashFilters();
+    return state.tasks.filter(function(t){
+      if(f.assignedTo && t.assignedTo !== f.assignedTo) return false;
+      if(f.assignedBy && t.assignedBy !== f.assignedBy) return false;
+      if(f.month !== "" && monthOfTask(t) !== parseInt(f.month,10)) return false;
+      if(f.year !== "" && yearOfTask(t) !== parseInt(f.year,10)) return false;
+      if(f.type && t.taskType !== f.type) return false;
+      if(f.priority && t.priority !== f.priority) return false;
+      if(!matchesStatusFilter(t, f.status)) return false;
+      return true;
+    });
+  }
+
+  function renderDashboard(){
+    buildManagerOptions(document.getElementById("fx_assignedBy"));
+    buildMemberOptions(document.getElementById("fx_assignedTo"));
+    buildMonthOptions(document.getElementById("fx_month"));
+    buildYearOptions(document.getElementById("fx_year"));
+    buildFilterOptionsFromMaster(document.getElementById("fx_type"), state.taskTypes, state.tasks.map(function(t){return t.taskType;}));
+
+    var tasks = dashboardTasks();
+    var byKey = { pending:0, progress:0, hold:0, done:0, overdue:0, delayed:0 };
+    tasks.forEach(function(t){ byKey[statusLabelClass(t).key]++; });
+    var completionPct = tasks.length ? Math.round(byKey.done/tasks.length*100) : 0;
+    var completedTasks = tasks.filter(function(t){ return t.status===STATUS.DONE; });
+    var incompleteTasks = tasks.filter(function(t){ return t.status!==STATUS.DONE; });
+    var avgTaken = completedTasks.length ? completedTasks.reduce(function(s,t){ return s+(taskMetrics(t).daysTaken||0); },0)/completedTasks.length : 0;
+    var avgElapsed = incompleteTasks.length ? incompleteTasks.reduce(function(s,t){ return s+(taskMetrics(t).daysElapsed||0); },0)/incompleteTasks.length : 0;
+
+    document.getElementById("kpiTotal").textContent = tasks.length;
+    document.getElementById("kpiDone").textContent = byKey.done;
+    document.getElementById("kpiPending").textContent = byKey.pending;
+    document.getElementById("kpiProgress").textContent = byKey.progress;
+    document.getElementById("kpiHold").textContent = byKey.hold;
+    document.getElementById("kpiOverdue").textContent = byKey.overdue;
+    document.getElementById("kpiDelayed").textContent = byKey.delayed;
+    document.getElementById("kpiCompletion").textContent = completionPct + "%";
+    document.getElementById("kpiAvgTaken").textContent = avgTaken ? avgTaken.toFixed(1) : "0";
+    document.getElementById("kpiAvgElapsed").textContent = avgElapsed ? avgElapsed.toFixed(1) : "0";
+
+    var incompleteSorted = incompleteTasks.map(function(t){ return { t:t, elapsed: taskMetrics(t).daysElapsed || 0 }; }).sort(function(a,b){ return b.elapsed-a.elapsed; });
+    document.getElementById("longestPending").innerHTML = incompleteSorted.length ? ("Longest pending: <b>"+escapeHtml(incompleteSorted[0].t.taskItem)+"</b> &mdash; "+escapeHtml(incompleteSorted[0].t.assignedTo||"-")+" &mdash; "+incompleteSorted[0].elapsed+" days") : "";
+
+    document.getElementById("thresholdNote").textContent = "threshold: " + (state.settings.delayThresholdDays||15) + " days";
+    var delayed = tasks.filter(function(t){ return isDelayedFlag(t); }).sort(function(a,b){ return taskMetrics(b).daysElapsed - taskMetrics(a).daysElapsed; });
+    document.getElementById("delayedPanel").innerHTML = delayed.length===0 ? '<div class="helper">No delayed tasks right now.</div>' : delayed.map(function(t){
+      var m = taskMetrics(t);
+      return '<div class="lead-row"><div class="lead-info"><div class="name">'+escapeHtml(t.taskItem)+'</div><div class="sub">Assigned to '+escapeHtml(t.assignedTo||"-")+' \u00B7 by '+escapeHtml(t.assignedBy||"-")+' \u00B7 assigned '+fmtDate(t.assignedDate)+'</div></div><div class="lead-counts">'+m.daysElapsed+' days elapsed<br>threshold '+m.threshold+'</div></div>';
+    }).join("");
+
+    var ranked = activeMembers().map(function(m){ var r=ratingForMember(m.name, state.tasks); r.name=m.name; r.designation=m.designation; return r; }).sort(function(a,b){ return b.stars-a.stars || b.completed-a.completed; });
+    var lb = document.getElementById("leaderboard");
+    lb.innerHTML = ranked.length===0 ? '<div class="helper">Add active members to see rankings.</div>' : ranked.map(function(r,i){
+      var initials = r.name.split(" ").map(function(p){return p[0];}).join("").slice(0,2).toUpperCase();
+      var sub = (r.designation?r.designation+" \u00B7 ":"") + (r.completed===0 ? "No completed tasks yet" : (Math.round(r.onTimeRate*100)+"% on-time \u00B7 avg "+r.avgTaken.toFixed(1)+"d"));
+      return '<div class="lead-row"><div class="rank">'+(i+1)+'</div><div class="avatar drop-target" data-member="'+escapeHtml(r.name)+'">'+escapeHtml(initials)+'</div>'+
+        '<div class="lead-info"><div class="name">'+escapeHtml(r.name)+'</div><div class="sub">'+escapeHtml(sub)+'</div></div>'+
+        '<div class="lead-counts">'+r.total+' total<br>'+r.completed+' done</div>'+
+        '<div class="stars" title="'+r.stars+' / 5">'+starString(r.stars)+'</div></div>';
+    }).join("");
+    if(ranked.length) wireDropTargets(lb);
+
+    var mgrWork = activeManagers().map(function(m){
+      var assigned = state.tasks.filter(function(t){ return t.assignedBy===m.name; });
+      var completed = assigned.filter(function(t){ return t.status===STATUS.DONE; });
+      var delayedCount = assigned.filter(function(t){ return isDelayedFlag(t); }).length;
+      return { name:m.name, designation:m.designation, total:assigned.length, completed:completed.length, delayed:delayedCount };
+    }).sort(function(a,b){ return b.total-a.total; });
+    document.getElementById("managerWorkloadPanel").innerHTML = mgrWork.length===0 ? '<div class="helper">Add managers to see this.</div>' : mgrWork.map(function(m){
+      return '<div class="lead-row"><div class="lead-info"><div class="name">'+escapeHtml(m.name)+'</div><div class="sub">'+escapeHtml(m.designation||"-")+'</div></div><div class="lead-counts">'+m.total+' assigned<br>'+m.completed+' done'+(m.delayed?', '+m.delayed+' delayed':'')+'</div></div>';
+    }).join("");
+
+    renderTrendChart(tasks);
+  }
+
+  function wireDropTargets(container){
+    Array.prototype.forEach.call(container.querySelectorAll(".drop-target"), function(el){
+      el.addEventListener("dragover", function(e){ e.preventDefault(); el.classList.add("drop-hover"); });
+      el.addEventListener("dragleave", function(){ el.classList.remove("drop-hover"); });
+      el.addEventListener("drop", function(e){
+        e.preventDefault(); el.classList.remove("drop-hover");
+        var memberName = el.getAttribute("data-member");
+        var taskId = e.dataTransfer.getData("text/plain") || draggedTaskId;
+        if(!taskId) return;
+        requireMasterAdmin(function(){ reassignTask(taskId, memberName); });
+      });
+    });
+  }
+  function reassignTask(taskId, memberName){
+    var t = state.tasks.find(function(x){ return x.id === taskId; });
+    if(!t) return;
+    var old = t.assignedTo;
+    if(old === memberName){ showToast(memberName + " is already Assigned To this task"); return; }
+    t.assignedTo = memberName; t.lastUpdatedBy = "Admin"; t.lastUpdatedDate = new Date().toISOString();
+    logActivity("Admin","Admin","Task Reassigned","Task", t.taskItem, old||"-", memberName);
+    refreshThenSave(function(){}).then(function(){ renderAll(); showToast("Reassigned to " + memberName); });
+  }
+
+  function renderTrendChart(filteredTasks){
+    var source = filteredTasks || state.tasks;
+    var months = [];
+    for(var i=7;i>=0;i--){ var now=new Date(); var d=new Date(now.getFullYear(), now.getMonth()-i, 1); months.push({label:MONTH_NAMES[d.getMonth()]+" "+d.getFullYear(), y:d.getFullYear(), m:d.getMonth()}); }
+    var seriesKeys = ["done","progress","hold","overdue","delayed"];
+    var seriesLabel = {done:"Completed",progress:"In Progress",hold:"On Hold",overdue:"Overdue",delayed:"Delayed"};
+    var seriesVar = {done:"--green",progress:"--amber",hold:"--blue",overdue:"--orange",delayed:"--red"};
+    var counts = {}; var taskIndex = {};
+    seriesKeys.forEach(function(k){ counts[k]=months.map(function(){return 0;}); taskIndex[k]=months.map(function(){return [];}); });
+    source.forEach(function(t){
+      var d = parseISO(t.assignedDate); if(!d) return;
+      var mi = -1; for(var j=0;j<months.length;j++){ if(months[j].y===d.getFullYear() && months[j].m===d.getMonth()){ mi=j; break; } }
+      if(mi===-1) return;
+      var sc = statusLabelClass(t);
+      var key = sc.key === "pending" ? "progress" : sc.key;
+      if(counts[key]){ counts[key][mi]++; taskIndex[key][mi].push(t); }
+    });
+    trendChartData = { months:months, seriesKeys:seriesKeys, seriesLabel:seriesLabel, taskIndex:taskIndex };
+
+    var styles = getComputedStyle(document.body);
+    var ink = styles.getPropertyValue("--ink").trim(), rule = styles.getPropertyValue("--rule").trim();
+    var datasets = seriesKeys.map(function(k){
+      var color = styles.getPropertyValue(seriesVar[k]).trim();
+      return { label:seriesLabel[k], data:counts[k], borderColor:color, backgroundColor:color, tension:0.3, pointRadius:3, fill:false };
+    });
+    var ctx = document.getElementById("trendChart").getContext("2d");
+    if(trendChartInstance) trendChartInstance.destroy();
+    trendChartInstance = new Chart(ctx, {
+      type:"line",
+      data:{ labels: months.map(function(mo){return mo.label;}), datasets: datasets },
+      options:{
+        responsive:true,
+        plugins:{
+          legend:{ display:true, labels:{ color:ink, font:{size:10.5} } },
+          tooltip:{ callbacks:{ label: function(context){
+            var key = seriesKeys[context.datasetIndex];
+            var tasksHere = trendChartData.taskIndex[key][context.dataIndex] || [];
+            var line = context.dataset.label + ": " + context.parsed.y;
+            if(tasksHere.length) line += "  (e.g. " + tasksHere[0].assignedTo + " - " + tasksHere[0].taskItem + ")";
+            return line;
+          } } }
+        },
+        scales:{ x:{ ticks:{color:ink,font:{size:10.5}}, grid:{color:rule} }, y:{ beginAtZero:true, ticks:{color:ink,precision:0,font:{size:10.5}}, grid:{color:rule} } },
+        onClick: function(evt, elements){
+          if(!elements.length) return;
+          var el = elements[0];
+          var key = seriesKeys[el.datasetIndex];
+          var month = months[el.index];
+          document.querySelector('.tab-btn[data-view="register"]').click();
+          document.getElementById("rx_status").value = key;
+          document.getElementById("rx_month").value = month.m;
+          document.getElementById("rx_year").value = month.y;
+          renderRegister();
+        }
+      }
+    });
+  }
+
+  // ================= REGISTER =================
+  function registerFilters(){
+    return { status:document.getElementById("rx_status").value, assignedBy:document.getElementById("rx_assignedBy").value, assignedTo:document.getElementById("rx_assignedTo").value,
+      type:document.getElementById("rx_type").value, priority:document.getElementById("rx_priority").value, month:document.getElementById("rx_month").value, year:document.getElementById("rx_year").value,
+      assignedFrom:document.getElementById("rx_assignedFrom").value, dueFrom:document.getElementById("rx_dueFrom").value };
+  }
+  function filteredSortedTasks(){
+    var q = document.getElementById("searchBox").value.trim().toLowerCase();
+    var f = registerFilters();
+    var list = state.tasks.filter(function(t){
+      if(f.assignedBy && t.assignedBy !== f.assignedBy) return false;
+      if(f.assignedTo && t.assignedTo !== f.assignedTo) return false;
+      if(f.type && t.taskType !== f.type) return false;
+      if(f.priority && t.priority !== f.priority) return false;
+      if(f.month !== "" && monthOfTask(t) !== parseInt(f.month,10)) return false;
+      if(f.year !== "" && yearOfTask(t) !== parseInt(f.year,10)) return false;
+      if(f.assignedFrom && (!t.assignedDate || t.assignedDate < f.assignedFrom)) return false;
+      if(f.dueFrom && (!t.dueDate || t.dueDate < f.dueFrom)) return false;
+      if(!matchesStatusFilter(t, f.status)) return false;
+      if(q){ var hay=(t.taskItem+" "+t.assignedBy+" "+t.assignedTo+" "+(t.notes||"")+" "+(t.description||"")).toLowerCase(); if(hay.indexOf(q)===-1) return false; }
+      return true;
+    });
+    list.sort(function(a,b){
+      var key = state.sortKey||"assignedDate"; var dir = state.sortDir==="asc"?1:-1;
+      var ka=a[key], kb=b[key]; ka=ka===undefined||ka===null?"":ka; kb=kb===undefined||kb===null?"":kb;
+      if(ka<kb) return -1*dir; if(ka>kb) return 1*dir; return 0;
+    });
+    return list;
+  }
+  function renderRegister(){
+    buildManagerOptions(document.getElementById("rx_assignedBy"));
+    buildMemberOptions(document.getElementById("rx_assignedTo"));
+    buildFilterOptionsFromMaster(document.getElementById("rx_type"), state.taskTypes, state.tasks.map(function(t){return t.taskType;}));
+    buildMonthOptions(document.getElementById("rx_month"));
+    buildYearOptions(document.getElementById("rx_year"));
+
+    var list = filteredSortedTasks();
+    var body = document.getElementById("registerBody");
+    var empty = document.getElementById("registerEmpty");
+    if(list.length === 0){ body.innerHTML=""; empty.style.display="block"; return; }
+    empty.style.display="none";
+
+    function personCell(name, pool){
+      var mem = pool==="manager" ? findManager(name) : findMember(name);
+      return '<td class="person-cell"><div class="n">'+escapeHtml(name||"-")+'</div>'+(mem&&mem.designation?'<div class="d">'+escapeHtml(mem.designation)+'</div>':'')+'</td>';
+    }
+    function prioClass(p){ return p==="High"?"prio-high":(p==="Low"?"prio-low":"prio-medium"); }
+
+    body.innerHTML = list.map(function(t){
+      var sc = statusLabelClass(t); var m = taskMetrics(t); var delayed = m.isDelayed;
+      var pct = t.progress || 0;
+      return '<tr data-id="'+t.id+'" class="'+(delayed?"row-delayed":"")+' clickable-row" draggable="true">'+
+        '<td class="mono task-id-cell" style="cursor:pointer;text-decoration:underline;color:var(--brass);">'+taskIdLabel(t.srNo)+'</td>'+
+        '<td class="task-item-cell" style="cursor:pointer;"><div class="t">'+escapeHtml(t.taskItem||"-")+'</div></td>'+
+        personCell(t.assignedBy,"manager") + personCell(t.assignedTo,"member") +
+        '<td>'+escapeHtml(t.taskType||"-")+'</td>'+
+        '<td class="mono">'+fmtDate(t.assignedDate)+'</td>'+
+        '<td class="mono">'+(t.dueDate?fmtDate(t.dueDate):"-")+'</td>'+
+        '<td><span class="pill '+prioClass(t.priority)+'">'+escapeHtml(t.priority||"Medium")+'</span></td>'+
+        '<td><span class="pill '+sc.cls+'">'+sc.label+'</span>'+(sc.key==="done"&&m.completedLate?'<span class="late-tag">Completed late</span>':'')+'</td>'+
+        '<td class="mono">'+pct+'%<div class="progress-mini"><div class="progress-mini-fill" style="width:'+pct+'%;"></div></div></td>'+
+        '<td class="mono">'+(m.daysElapsed!==null?m.daysElapsed:"-")+'</td>'+
+        '<td class="mono">'+(m.daysTaken!==null?m.daysTaken:"-")+'</td>'+
+        '<td>'+(delayed?'<span class="pill delayed">Attention Required</span>':'<span class="pill muted">-</span>')+'</td>'+
+        '<td class="mono">'+(t.completionDate?fmtDate(t.completionDate):"-")+'</td>'+
+        '<td style="max-width:140px;font-size:11.5px;color:var(--ink-soft);">'+escapeHtml((t.notes||"").slice(0,50))+((t.notes||"").length>50?"...":"")+'</td>'+
+        '<td class="mono" style="font-size:11px;">'+(t.lastUpdatedDate?fmtDate(toISO(new Date(t.lastUpdatedDate))):"-")+(t.lastUpdatedBy?'<br><span style="color:var(--ink-soft);">'+escapeHtml(t.lastUpdatedBy)+'</span>':'')+'</td>'+
+        '<td><div class="row-actions">'+
+          '<button class="edit-row" title="Edit task information"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>'+
+          '<button class="updates-row" title="View / add progress updates">Updates</button>'+
+        '</div></td>'+
+      '</tr>';
+    }).join("");
+
+    Array.prototype.forEach.call(body.querySelectorAll("tr"), function(tr){
+      tr.addEventListener("dragstart", function(e){ draggedTaskId = tr.getAttribute("data-id"); e.dataTransfer.setData("text/plain", draggedTaskId); });
+      tr.querySelector(".edit-row").addEventListener("click", function(e){ e.stopPropagation(); openIdentify(function(){ openModal(tr.getAttribute("data-id")); }); });
+      tr.querySelector(".updates-row").addEventListener("click", function(e){ e.stopPropagation(); openTaskDetails(tr.getAttribute("data-id")); });
+      tr.addEventListener("click", function(){ openTaskDetails(tr.getAttribute("data-id")); });
+    });
+  }
+
+  // ================= MEMBERS =================
+  function renderTeam(){
+    var grid = document.getElementById("teamGrid");
+    if(state.members.length===0){ grid.innerHTML='<div class="helper">No members yet.</div>'; return; }
+    grid.innerHTML = state.members.map(function(m){
+      var r = ratingForMember(m.name, state.tasks);
+      var initials = m.name.split(" ").map(function(p){return p[0];}).join("").slice(0,2).toUpperCase();
+      var inactive = m.status === "Inactive";
+      return '<div class="member-card'+(inactive?" inactive":"")+'" data-name="'+escapeHtml(m.name)+'">'+
+        '<div class="card-actions"><button class="edit-member" title="Edit">&#9998;</button></div>'+
+        '<div class="mtop"><div class="avatar">'+escapeHtml(initials)+'</div><div><div class="name">'+escapeHtml(m.name)+'</div><div class="desig">'+escapeHtml(m.designation||"No designation set")+'</div></div></div>'+
+        '<div class="meta">'+(m.role?'<div><b>Role:</b> '+escapeHtml(m.role)+'</div>':'')+(m.department?'<div><b>Dept:</b> '+escapeHtml(m.department)+'</div>':'')+(m.employeeId?'<div><b>Emp ID:</b> '+escapeHtml(m.employeeId)+'</div>':'')+'<div><b>Status:</b> <span class="pill '+(inactive?"inactive":"done")+'">'+escapeHtml(m.status)+'</span></div></div>'+
+        '<div class="stars" title="'+r.stars+' / 5">'+starString(r.stars)+'</div>'+
+        '<div class="stats"><div>TOTAL<b>'+r.total+'</b></div><div>DONE<b>'+r.completed+'</b></div><div>OPEN<b>'+r.open+'</b></div></div>'+
+      '</div>';
+    }).join("");
+    Array.prototype.forEach.call(grid.querySelectorAll(".edit-member"), function(btn){
+      btn.addEventListener("click", function(){ var name=btn.closest(".member-card").getAttribute("data-name"); requireMasterAdmin(function(){ openMemberModal(name); }); });
+    });
+  }
+
+  // ================= MANAGERS =================
+  function renderManagerGrid(){
+    var grid = document.getElementById("managerGrid");
+    if(state.managers.length===0){ grid.innerHTML='<div class="helper">No managers yet.</div>'; return; }
+    grid.innerHTML = state.managers.map(function(m){
+      var assigned = state.tasks.filter(function(t){return t.assignedBy===m.name;});
+      var completed = assigned.filter(function(t){return t.status===STATUS.DONE;});
+      var initials = m.name.split(" ").map(function(p){return p[0];}).join("").slice(0,2).toUpperCase();
+      var inactive = m.status === "Inactive";
+      return '<div class="member-card'+(inactive?" inactive":"")+'" data-name="'+escapeHtml(m.name)+'">'+
+        '<div class="card-actions"><button class="edit-member" title="Edit">&#9998;</button></div>'+
+        '<div class="mtop"><div class="avatar">'+escapeHtml(initials)+'</div><div><div class="name">'+escapeHtml(m.name)+'</div><div class="desig">'+escapeHtml(m.designation||"No designation set")+'</div></div></div>'+
+        '<div class="meta">'+(m.department?'<div><b>Dept:</b> '+escapeHtml(m.department)+'</div>':'')+(m.employeeId?'<div><b>Emp ID:</b> '+escapeHtml(m.employeeId)+'</div>':'')+'<div><b>Status:</b> <span class="pill '+(inactive?"inactive":"done")+'">'+escapeHtml(m.status)+'</span></div></div>'+
+        '<div class="stats"><div>ASSIGNED<b>'+assigned.length+'</b></div><div>DONE<b>'+completed.length+'</b></div></div>'+
+      '</div>';
+    }).join("");
+    Array.prototype.forEach.call(grid.querySelectorAll(".edit-member"), function(btn){
+      btn.addEventListener("click", function(){ var name=btn.closest(".member-card").getAttribute("data-name"); requireMasterAdmin(function(){ openManagerModal(name); }); });
+    });
+  }
+
+  // ================= ACTIVITY LOG =================
+  function populateActivityFilters(){
+    var userSel = document.getElementById("ax_user"); var names={}; state.activityLog.forEach(function(l){ names[l.userName]=true; });
+    var cur=userSel.value; userSel.innerHTML='<option value="">All</option>'+Object.keys(names).sort().map(function(n){return '<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>';}).join(""); userSel.value=cur;
+    var actionSel = document.getElementById("ax_action"); var actions={}; state.activityLog.forEach(function(l){ actions[l.actionType]=true; });
+    var curA=actionSel.value; actionSel.innerHTML='<option value="">All</option>'+Object.keys(actions).sort().map(function(a){return '<option value="'+escapeHtml(a)+'">'+escapeHtml(a)+'</option>';}).join(""); actionSel.value=curA;
+    var modSel = document.getElementById("ax_module"); var modules={}; state.activityLog.forEach(function(l){ if(l.module) modules[l.module]=true; });
+    var curM=modSel.value; modSel.innerHTML='<option value="">All</option>'+Object.keys(modules).sort().map(function(a){return '<option value="'+escapeHtml(a)+'">'+escapeHtml(a)+'</option>';}).join(""); modSel.value=curM;
+  }
+  function renderActivity(){
+    populateActivityFilters();
+    var user=document.getElementById("ax_user").value, action=document.getElementById("ax_action").value, module=document.getElementById("ax_module").value;
+    var from=document.getElementById("ax_from").value, to=document.getElementById("ax_to").value, q=document.getElementById("ax_search").value.trim().toLowerCase();
+    var list = state.activityLog.filter(function(l){
+      if(user && l.userName!==user) return false;
+      if(action && l.actionType!==action) return false;
+      if(module && l.module!==module) return false;
+      if(from && l.dateTime < from) return false;
+      if(to && l.dateTime > (to+"T23:59:59")) return false;
+      if(q){ var hay=(l.userName+" "+l.actionType+" "+l.module+" "+l.recordName+" "+l.previousValue+" "+l.newValue).toLowerCase(); if(hay.indexOf(q)===-1) return false; }
+      return true;
+    });
+    var body=document.getElementById("activityBody"), empty=document.getElementById("activityEmpty");
+    if(list.length===0){ body.innerHTML=""; empty.style.display="block"; return; }
+    empty.style.display="none";
+    body.innerHTML = list.map(function(l){
+      return '<tr><td class="mono" style="white-space:nowrap;font-size:11.5px;">'+fmtDateTime(l.dateTime)+'</td><td>'+escapeHtml(l.userName)+'</td>'+
+        '<td><span class="pill '+(l.userRole==="Admin"?"prio-high":"done")+'">'+escapeHtml(l.userRole)+'</span></td>'+
+        '<td>'+escapeHtml(l.actionType)+'</td><td>'+escapeHtml(l.module)+'</td><td>'+escapeHtml(l.recordName)+'</td>'+
+        '<td style="color:var(--ink-soft);">'+escapeHtml(l.previousValue)+'</td><td><b>'+escapeHtml(l.newValue)+'</b></td></tr>';
+    }).join("");
+  }
+
+  // ================= MASTER ADMIN =================
+  function renderAdmin(){
+    document.getElementById("adminLockedView").style.display = masterUnlocked ? "none" : "block";
+    document.getElementById("adminUnlockedView").style.display = masterUnlocked ? "block" : "none";
+    if(!masterUnlocked) return;
+    document.getElementById("delayThresholdInput").value = state.settings.delayThresholdDays || 15;
+    renderChipList("deptList","departments","Department");
+    renderChipList("desigList","designations","Designation");
+    renderChipList("typeList","taskTypes","Task Type");
+    buildMemberOptions(document.getElementById("resetPinMember"));
+    document.getElementById("backupDestination").value = state.settings.backupDestination || "download";
+    document.getElementById("autoBackupInterval").value = state.settings.autoBackupInterval || "off";
+    document.getElementById("folderStatusNote").textContent = backupDirHandle ? "Folder selected for this session." : "No folder selected yet.";
+  }
+
+  function renderAll(){ renderDashboard(); renderRegister(); renderTeam(); renderManagerGrid(); renderActivity(); renderAdmin(); }
+
+  // ================= IDENTIFY / PIN GATE =================
+  function refreshIdConfirmVisibility(){
+    var name = document.getElementById("id_name").value;
+    var hasPin = !!state.pins[name];
+    document.getElementById("id_confirmField").style.display = hasPin ? "none" : "block";
+    document.getElementById("id_pinLabel").textContent = hasPin ? "PIN" : "Create a PIN";
+    document.getElementById("id_hint").textContent = hasPin ? "Used to attribute what you add or edit." : "First time for this name - set a PIN now. Not real encryption, just accountability - don't reuse an important password.";
+  }
+  function openIdentify(onSuccess, lockedName){
+    idState.onSuccess = onSuccess;
+    var sel = document.getElementById("id_name");
+    var nameField = sel.closest(".field");
+    if(lockedName){
+      sel.innerHTML = '<option value="'+escapeHtml(lockedName)+'">'+escapeHtml(lockedName)+'</option>';
+      sel.value = lockedName; sel.disabled = true;
+      if(nameField) nameField.querySelector("label").textContent = "Assigned to";
+    } else {
+      sel.disabled = false;
+      sel.innerHTML = activeMembers().map(function(m){ return '<option value="'+escapeHtml(m.name)+'">'+escapeHtml(m.name)+'</option>'; }).join("");
+      if(idState.lastUsedName && findMember(idState.lastUsedName)) sel.value = idState.lastUsedName;
+      if(nameField) nameField.querySelector("label").textContent = "Your name";
+    }
+    document.getElementById("id_pin").value=""; document.getElementById("id_pinConfirm").value="";
+    refreshIdConfirmVisibility();
+    document.getElementById("idModalBack").classList.add("open");
+    setTimeout(function(){ document.getElementById("id_pin").focus(); },50);
+  }
+  function closeIdentify(){ document.getElementById("idModalBack").classList.remove("open"); idState.onSuccess=null; }
+  function submitIdentify(){
+    var name = document.getElementById("id_name").value;
+    if(!name){ showToast("Choose a name"); return; }
+    var pin = document.getElementById("id_pin").value.trim();
+    if(pin.length < 4){ showToast("PIN must be at least 4 digits"); return; }
+    var existing = state.pins[name];
+    function proceed(){ idState.lastUsedName=name; currentAuthedName=name; var cb=idState.onSuccess; closeIdentify(); if(cb) cb(name); }
+    if(existing){
+      verifySecret(pin, existing).then(function(ok){ if(ok) proceed(); else { showToast("Incorrect PIN for "+name); document.getElementById("id_pin").value=""; } });
+    } else {
+      var confirmPin = document.getElementById("id_pinConfirm").value.trim();
+      if(pin !== confirmPin){ showToast("PINs don't match"); return; }
+      hashSecret(pin).then(function(rec){
+        state.pins[name]=rec;
+        logActivity(name,"Member","PIN Created","Account Security",name,"-","-");
+        return refreshThenSave(function(){});
+      }).then(proceed);
+    }
+  }
+
+  // ================= MASTER KEY GATE =================
+  function requireMasterAdmin(onSuccess){ if(masterUnlocked){ onSuccess(); return; } openMasterKeyModal(onSuccess, false); }
+  function openMasterKeyModal(onSuccess, isChange){
+    mkState.onSuccess = onSuccess;
+    var hasKey = !!state.masterCred;
+    document.getElementById("mk_key").value=""; document.getElementById("mk_keyConfirm").value="";
+    document.getElementById("mk_confirmField").style.display = (hasKey && !isChange) ? "none" : "block";
+    document.getElementById("mk_keyLabel").textContent = (hasKey && !isChange) ? "Master key" : "New master key";
+    document.getElementById("mk_hint").textContent = (hasKey && !isChange) ? "Stored as a salted PBKDF2-SHA256 hash - still a client-side check, not a guarantee against source-level tampering." : (isChange ? "This replaces the current master key." : "No master key set yet - create one now.");
+    document.getElementById("mkModalTitle").textContent = isChange ? "Change settings key" : "Settings key";
+    document.getElementById("mkModalBack").classList.add("open");
+    setTimeout(function(){ document.getElementById("mk_key").focus(); },50);
+  }
+  function closeMasterKeyModal(){ document.getElementById("mkModalBack").classList.remove("open"); mkState.onSuccess=null; }
+  function armAdminTimeout(){
+    if(adminTimeoutHandle) clearTimeout(adminTimeoutHandle);
+    if(masterUnlocked){
+      adminTimeoutHandle = setTimeout(function(){
+        masterUnlocked = false;
+        logActivity("Admin","Admin","Settings Locked","Settings","Session","-","Auto-locked after inactivity");
+        refreshThenSave(function(){}).then(renderAdmin);
+        showToast("Settings session timed out");
+      }, ADMIN_TIMEOUT_MS);
+    }
+  }
+  function submitMasterKey(isChange){
+    var key = document.getElementById("mk_key").value.trim();
+    if(key.length < 4){ showToast("Master key must be at least 4 characters"); return; }
+    var hasKey = !!state.masterCred;
+    function unlock(){
+      masterUnlocked = true; armAdminTimeout();
+      logActivity("Admin","Admin","Settings Unlocked","Settings","Session","-","Unlocked");
+      var cb = mkState.onSuccess; closeMasterKeyModal();
+      refreshThenSave(function(){}).then(function(){ renderAdmin(); showToast("Settings unlocked"); if(cb) cb(); });
+    }
+    if(hasKey && !isChange){
+      verifySecret(key, state.masterCred).then(function(ok){ if(ok) unlock(); else { showToast("Incorrect master key"); document.getElementById("mk_key").value=""; } });
+    } else {
+      var confirmKey = document.getElementById("mk_keyConfirm").value.trim();
+      if(key !== confirmKey){ showToast("Keys don't match"); return; }
+      hashSecret(key).then(function(rec){
+        state.masterCred = rec;
+        logActivity("Admin","Admin","Settings Key Changed","Settings","Settings Key","-","Changed");
+        unlock();
+      });
+    }
+  }
+
+  // ================= TASK MODAL (Edit - fields only, no progress here) =================
+  function taskIdLabel(srNo){ return "TASK-" + String(srNo).padStart(3,"0"); }
+  function renderTaskTypeSelect(currentValue){ buildMasterSelect(document.getElementById("f_taskType"), state.taskTypes, currentValue); }
+
+  function openModal(id){
+    renderTaskTypeSelect();
+    wirePicker("pick_assignedBy","list_assignedBy", activeManagers, function(){return pickerGet("assignedBy");}, function(v){pickerSet("assignedBy",v);});
+    wirePicker("pick_assignedTo","list_assignedTo", activeMembers, function(){return pickerGet("assignedTo");}, function(v){pickerSet("assignedTo",v);});
+    var deleteBtn = document.getElementById("deleteTaskBtn");
+    document.getElementById("f_id").value = id || "";
+    if(id){
+      var t = state.tasks.find(function(x){ return x.id===id; });
+      document.getElementById("modalTitle").textContent = "Edit task " + taskIdLabel(t.srNo);
+      document.getElementById("f_taskItem").value = t.taskItem||"";
+      document.getElementById("f_description").value = t.description||"";
+      setPickerDisplay("assignedBy", t.assignedBy); setPickerDisplay("assignedTo", t.assignedTo);
+      renderTaskTypeSelect(t.taskType);
+      document.getElementById("f_assignedDate").value = t.assignedDate||"";
+      document.getElementById("f_dueDate").value = t.dueDate||"";
+      document.getElementById("f_priority").value = t.priority||"Medium";
+      document.getElementById("f_status").value = t.status||STATUS.PENDING;
+      document.getElementById("f_completionDate").value = t.completionDate||"";
+      document.getElementById("f_notes").value = t.notes||"";
+      var d = parseISO(t.assignedDate);
+      document.getElementById("f_metaLine").textContent = "Month: "+(d?MONTH_FULL[d.getMonth()]:"-")+" | Year: "+(d?d.getFullYear():"-")+" | Created by "+(t.createdBy||"-")+" | Last updated by "+(t.lastUpdatedBy||"-")+(t.lastUpdatedDate?" on "+fmtDateTime(t.lastUpdatedDate):"");
+      deleteBtn.style.display = "inline-flex";
+    } else {
+      document.getElementById("modalTitle").textContent = "New task";
+      document.getElementById("f_taskItem").value=""; document.getElementById("f_description").value="";
+      setPickerDisplay("assignedBy",""); setPickerDisplay("assignedTo","");
+      document.getElementById("f_assignedDate").value = todayISO();
+      document.getElementById("f_dueDate").value=""; document.getElementById("f_priority").value="Medium";
+      document.getElementById("f_status").value = STATUS.PENDING;
+      document.getElementById("f_completionDate").value=""; document.getElementById("f_notes").value="";
+      document.getElementById("f_metaLine").textContent = "";
+      deleteBtn.style.display = "none";
+    }
+    document.getElementById("taskModalBack").classList.add("open");
+  }
+  function closeModal(){ document.getElementById("taskModalBack").classList.remove("open"); }
+
+  // ================= TASK DETAILS / UPDATES POPUP (CRM-style timeline, incremental progress) =================
+  var detailsTaskId = null;
+
+  function requireUpdatePermission(task, onSuccess){
+    if(masterUnlocked){ currentAuthedName = currentAuthedName || "Admin"; onSuccess("Admin"); return; }
+    openIdentify(onSuccess, task.assignedTo);
+  }
+
+  function renderDetailsTimeline(t){
+    var el = document.getElementById("detailsTimeline");
+    var updates = (t.progressUpdates || []);
+    if(updates.length===0){ el.innerHTML = '<div class="helper" style="padding:8px 12px;">No progress updates yet.</div>'; return; }
+    el.innerHTML = updates.map(function(u){
+      return '<div class="progress-entry"><div class="pe-head"><span>'+fmtDate(u.date)+'</span><span>+'+u.delta+'%</span></div><div>'+escapeHtml(u.note)+'</div><div class="helper">by '+escapeHtml(u.by||"-")+'</div></div>';
+    }).join("");
+  }
+
+  function openTaskDetails(id){
+    var t = state.tasks.find(function(x){ return x.id===id; });
+    if(!t) return;
+    detailsTaskId = id;
+    document.getElementById("detailsModalTitle").textContent = taskIdLabel(t.srNo) + " \u2014 " + t.taskItem;
+    var m = taskMetrics(t);
+    var sc = statusLabelClass(t);
+    document.getElementById("detailsOverview").innerHTML =
+      '<b>Task ID:</b> '+taskIdLabel(t.srNo)+'<br>'+
+      '<b>Description:</b> '+escapeHtml(t.description||"-")+'<br>'+
+      '<b>Assigned By:</b> '+escapeHtml(t.assignedBy||"-")+' &nbsp; <b>Assigned To:</b> '+escapeHtml(t.assignedTo||"-")+'<br>'+
+      '<b>Task Type:</b> '+escapeHtml(t.taskType||"-")+' &nbsp; <b>Priority:</b> '+escapeHtml(t.priority||"-")+'<br>'+
+      '<b>Assignment Date:</b> '+fmtDate(t.assignedDate)+' &nbsp; <b>Due Date:</b> '+(t.dueDate?fmtDate(t.dueDate):"-")+'<br>'+
+      '<b>Status:</b> '+sc.label+' &nbsp; <b>Current Progress:</b> '+(t.progress||0)+'%<br>'+
+      '<b>Days Elapsed / Taken:</b> '+(m.daysElapsed!==null?m.daysElapsed+" elapsed":(m.daysTaken!==null?m.daysTaken+" taken":"-"));
+    renderDetailsTimeline(t);
+    document.getElementById("du_date").value = ""; document.getElementById("du_delta").value = ""; document.getElementById("du_note").value = "";
+    document.getElementById("du_date").min = t.assignedDate || "";
+    var remaining = 100 - (t.progress||0);
+    var completed = t.status === STATUS.DONE || remaining <= 0;
+    document.getElementById("detailsAddUpdateWrap").style.display = completed ? "none" : "block";
+    document.getElementById("detailsCompletedNote").style.display = completed ? "block" : "none";
+    if(completed) document.getElementById("detailsCompletedNote").textContent = "Task Completed \u2013 100%";
+    document.getElementById("du_remainingNote").textContent = completed ? "" : (remaining + "% remaining to complete this task.");
+    document.getElementById("detailsModalBack").classList.add("open");
+  }
+  function closeTaskDetails(){ document.getElementById("detailsModalBack").classList.remove("open"); detailsTaskId = null; }
+
+  function submitDetailsUpdate(){
+    var t = state.tasks.find(function(x){ return x.id===detailsTaskId; });
+    if(!t) return;
+    requireUpdatePermission(t, function(actorName){
+      var date = document.getElementById("du_date").value;
+      var deltaRaw = document.getElementById("du_delta").value;
+      var note = document.getElementById("du_note").value.trim();
+      if(!date){ showToast("Pick an update date"); return; }
+      if(date < t.assignedDate){ showToast("Update date cannot be earlier than the assignment date."); return; }
+      var lastDate = t.progressUpdates && t.progressUpdates.length ? t.progressUpdates[t.progressUpdates.length-1].date : t.assignedDate;
+      if(date < lastDate){ showToast("Update date cannot be earlier than the previous update ("+fmtDate(lastDate)+")."); return; }
+      if(date > todayISO()){ showToast("Update date cannot be in the future."); return; }
+      var delta = parseInt(deltaRaw,10);
+      if(isNaN(delta) || delta <= 0 || delta > 100){ showToast("Enter a progress value between 1 and 100."); return; }
+      if(!note){ showToast("Add a short remark / update note"); return; }
+      var current = t.progress || 0;
+      var remaining = 100 - current;
+      if(delta > remaining){ showToast("Only "+remaining+"% remaining. Please enter "+remaining+"% or less."); return; }
+
+      var newTotal = current + delta;
+      t.progressUpdates = t.progressUpdates || [];
+      t.progressUpdates.push({ date:date, delta:delta, note:note, by:actorName });
+      t.progress = newTotal;
+      t.lastUpdatedBy = actorName; t.lastUpdatedDate = new Date().toISOString();
+      var autoCompleted = false;
+      if(newTotal >= 100 && t.status !== STATUS.DONE){
+        t.status = STATUS.DONE;
+        if(!t.completionDate) t.completionDate = date;
+        autoCompleted = true;
+      }
+      logActivity(actorName, actorName==="Admin"?"Admin":"Member", "Task Progress Updated", "Task", taskIdLabel(t.srNo)+" - "+t.taskItem, current+"%", newTotal+"% (+"+delta+"%) - "+note.slice(0,50));
+      if(autoCompleted) logActivity(actorName, actorName==="Admin"?"Admin":"Member", "Task Completed", "Task", taskIdLabel(t.srNo)+" - "+t.taskItem, current+"%", "100%");
+
+      refreshThenSave(function(){}).then(function(){
+        renderAll();
+        openTaskDetails(t.id);
+        showToast(autoCompleted ? "Task Completed \u2013 100%" : "Progress update saved");
+      });
+    });
+  }
+
+  function validateTaskForm(){
+    var missing = [];
+    if(!document.getElementById("f_taskItem").value.trim()) missing.push("Task / Title");
+    if(!document.getElementById("f_description").value.trim()) missing.push("Description");
+    if(!pickerGet("assignedBy")) missing.push("Assigned By");
+    if(!pickerGet("assignedTo")) missing.push("Assigned To");
+    if(!document.getElementById("f_taskType").value) missing.push("Task Type");
+    if(!document.getElementById("f_assignedDate").value) missing.push("Assignment Date");
+    if(!document.getElementById("f_priority").value) missing.push("Priority");
+    if(!document.getElementById("f_status").value) missing.push("Status");
+    return missing;
+  }
+
+  function diffLog(actor, recordName, oldT, newT){
+    if(oldT.status !== newT.status){
+      if(newT.status === STATUS.DONE) logActivity(actor,"Member","Task Completed","Task",recordName,"-","Completed on "+(newT.completionDate?fmtDate(newT.completionDate):"-"));
+      else logActivity(actor,"Member","Status Changed","Task",recordName, statusWord(oldT.status), statusWord(newT.status));
+    }
+    if(oldT.assignedTo !== newT.assignedTo) logActivity(actor,"Member","Task Reassigned","Task",recordName, oldT.assignedTo||"-", newT.assignedTo||"-");
+    if(oldT.assignedBy !== newT.assignedBy) logActivity(actor,"Member","Edited Assigned By","Task",recordName, oldT.assignedBy||"-", newT.assignedBy||"-");
+    if(oldT.dueDate !== newT.dueDate) logActivity(actor,"Member","Edited Due Date","Task",recordName, oldT.dueDate?fmtDate(oldT.dueDate):"-", newT.dueDate?fmtDate(newT.dueDate):"-");
+    if(oldT.completionDate !== newT.completionDate) logActivity(actor,"Member","Completion Date Changed","Task",recordName, oldT.completionDate?fmtDate(oldT.completionDate):"-", newT.completionDate?fmtDate(newT.completionDate):"-");
+    if(oldT.priority !== newT.priority) logActivity(actor,"Member","Edited Priority","Task",recordName, oldT.priority, newT.priority);
+    if(oldT.taskItem !== newT.taskItem) logActivity(actor,"Member","Edited Task Title","Task",recordName, oldT.taskItem, newT.taskItem);
+  }
+  function statusWord(v){ return v===STATUS.DONE?"Completed":v===STATUS.HOLD?"On Hold":v===STATUS.PENDING?"Pending":"In Progress"; }
+
+  function saveTaskFromForm(){
+    var missing = validateTaskForm();
+    if(missing.length){ showToast("Please fill in: " + missing.join(", ")); return; }
+    var id = document.getElementById("f_id").value || uid("t");
+    var status = document.getElementById("f_status").value;
+    var completionDate = document.getElementById("f_completionDate").value;
+    if(status === STATUS.DONE && !completionDate) completionDate = todayISO();
+    var existing = state.tasks.find(function(t){ return t.id===id; });
+    var srNo = existing ? existing.srNo : (Math.max(0, state.tasks.reduce(function(m,t){return Math.max(m,t.srNo||0);},0))+1);
+    var actor = currentAuthedName || "Unknown";
+
+    var task = {
+      id:id, srNo:srNo, taskItem:document.getElementById("f_taskItem").value.trim(), description:document.getElementById("f_description").value.trim(),
+      assignedBy: pickerGet("assignedBy"), assignedTo: pickerGet("assignedTo"),
+      taskType: document.getElementById("f_taskType").value,
+      assignedDate: document.getElementById("f_assignedDate").value,
+      dueDate: document.getElementById("f_dueDate").value,
+      priority: document.getElementById("f_priority").value,
+      status: status, completionDate: completionDate,
+      notes: document.getElementById("f_notes").value.trim(),
+      progress: existing ? existing.progress||0 : 0,
+      progressUpdates: existing ? existing.progressUpdates||[] : [],
+      createdBy: existing?existing.createdBy:actor, createdAt: existing?existing.createdAt:new Date().toISOString(),
+      lastUpdatedBy: actor, lastUpdatedDate: new Date().toISOString()
+    };
+    if(status===STATUS.DONE) task.progress = 100;
+    if(existing) diffLog(actor, task.taskItem, existing, task);
+    else logActivity(actor,"Member","New Task","Task",task.taskItem,"-","Task created");
+
+    var idx = state.tasks.findIndex(function(t){ return t.id===id; });
+    if(idx>=0) state.tasks[idx]=task; else state.tasks.push(task);
+    refreshThenSave(function(){}).then(function(){ closeModal(); renderAll(); showToast("Task saved"); });
+  }
+  function deleteCurrentTask(){
+    var id = document.getElementById("f_id").value;
+    if(!id) return;
+    if(!confirm("Delete this task? This cannot be undone.")) return;
+    var t = state.tasks.find(function(x){ return x.id===id; });
+    state.tasks = state.tasks.filter(function(x){ return x.id!==id; });
+    logActivity(currentAuthedName||"Unknown","Member","Deleted Task","Task", t?t.taskItem:id, t?statusWord(t.status):"-","Deleted");
+    refreshThenSave(function(){}).then(function(){ closeModal(); renderAll(); showToast("Task deleted"); });
+  }
+
+  // ================= MEMBER MODAL =================
+  function openMemberModal(name){
+    var deleteBtn = document.getElementById("deleteMemberBtn");
+    if(name){
+      var m = findMember(name);
+      buildMasterSelect(document.getElementById("m_department"), state.departments, m.department);
+      buildMasterSelect(document.getElementById("m_designation"), state.designations, m.designation);
+      document.getElementById("memberModalTitle").textContent = "Edit Member";
+      document.getElementById("m_originalName").value = m.name;
+      document.getElementById("m_name").value = m.name; document.getElementById("m_name").disabled = true;
+      document.getElementById("m_empId").value = m.employeeId||"";
+      document.getElementById("m_role").value = m.role||"";
+      document.getElementById("m_location").value = m.location||""; document.getElementById("m_status").value = m.status||"Active";
+      deleteBtn.style.display = "inline-flex"; deleteBtn.textContent = m.status==="Inactive" ? "Reactivate" : "Deactivate";
+    } else {
+      buildMasterSelect(document.getElementById("m_department"), state.departments, "");
+      buildMasterSelect(document.getElementById("m_designation"), state.designations, "");
+      document.getElementById("memberModalTitle").textContent = "Add Member";
+      document.getElementById("m_originalName").value=""; document.getElementById("m_name").value=""; document.getElementById("m_name").disabled=false;
+      document.getElementById("m_empId").value=""; document.getElementById("m_role").value="";
+      document.getElementById("m_location").value=""; document.getElementById("m_status").value="Active";
+      deleteBtn.style.display = "none";
+    }
+    document.getElementById("memberModalBack").classList.add("open");
+  }
+  function closeMemberModal(){ document.getElementById("memberModalBack").classList.remove("open"); }
+  function saveMemberFromForm(){
+    var name = document.getElementById("m_name").value.trim();
+    if(!name){ showToast("Member name is required"); return; }
+    var originalName = document.getElementById("m_originalName").value;
+    var isNew = !originalName;
+    if(isNew && findMember(name)){ showToast("A member with that name already exists"); return; }
+    var newMember = { name: isNew?name:originalName, employeeId:document.getElementById("m_empId").value.trim(), designation:document.getElementById("m_designation").value, role:document.getElementById("m_role").value.trim(), department:document.getElementById("m_department").value, location:document.getElementById("m_location").value.trim(), status:document.getElementById("m_status").value };
+    if(isNew){ state.members.push(newMember); logActivity("Admin","Admin","Member Added","Member Master",newMember.name,"-",newMember.designation||"Added"); }
+    else {
+      var idx = state.members.findIndex(function(m){ return m.name===originalName; });
+      var old = state.members[idx];
+      if(old.designation!==newMember.designation || old.department!==newMember.department || old.status!==newMember.status) logActivity("Admin","Admin","Member Edited","Member Master",newMember.name, old.designation||old.status||"-", newMember.designation||newMember.status||"-");
+      state.members[idx] = newMember;
+    }
+    refreshThenSave(function(){}).then(function(){ closeMemberModal(); renderAll(); showToast("Member saved"); });
+  }
+  function toggleMemberActive(){
+    var originalName = document.getElementById("m_originalName").value;
+    if(!originalName) return;
+    var idx = state.members.findIndex(function(m){ return m.name===originalName; });
+    if(idx<0) return;
+    var old = state.members[idx].status;
+    state.members[idx].status = old==="Inactive" ? "Active" : "Inactive";
+    logActivity("Admin","Admin","Member "+(state.members[idx].status==="Inactive"?"Deactivated":"Reactivated"),"Member Master",originalName,old,state.members[idx].status);
+    refreshThenSave(function(){}).then(function(){ closeMemberModal(); renderAll(); showToast("Member updated"); });
+  }
+
+  // ================= MANAGER MODAL =================
+  function openManagerModal(name){
+    var deactivateBtn = document.getElementById("deactivateManagerBtn");
+    var deleteBtn = document.getElementById("deleteManagerBtn");
+    if(name){
+      var m = findManager(name);
+      buildMasterSelect(document.getElementById("g_department"), state.departments, m.department);
+      buildMasterSelect(document.getElementById("g_designation"), state.designations, m.designation);
+      document.getElementById("managerModalTitle").textContent = "Edit Manager";
+      document.getElementById("g_originalName").value = m.name;
+      document.getElementById("g_name").value = m.name; document.getElementById("g_name").disabled = false;
+      document.getElementById("g_empId").value = m.employeeId||"";
+      document.getElementById("g_status").value = m.status||"Active";
+      deactivateBtn.style.display = "inline-flex"; deactivateBtn.textContent = m.status==="Inactive" ? "Reactivate" : "Deactivate";
+      deleteBtn.style.display = "inline-flex";
+    } else {
+      buildMasterSelect(document.getElementById("g_department"), state.departments, "");
+      buildMasterSelect(document.getElementById("g_designation"), state.designations, "");
+      document.getElementById("managerModalTitle").textContent = "Add Manager";
+      document.getElementById("g_originalName").value=""; document.getElementById("g_name").value=""; document.getElementById("g_name").disabled=false;
+      document.getElementById("g_empId").value=""; document.getElementById("g_status").value="Active";
+      deactivateBtn.style.display = "none"; deleteBtn.style.display = "none";
+    }
+    document.getElementById("managerModalBack").classList.add("open");
+  }
+  function closeManagerModal(){ document.getElementById("managerModalBack").classList.remove("open"); }
+  function saveManagerFromForm(){
+    var name = document.getElementById("g_name").value.trim();
+    if(!name){ showToast("Manager name is required"); return; }
+    var originalName = document.getElementById("g_originalName").value;
+    var isNew = !originalName;
+    if(isNew && findManager(name)){ showToast("A manager with that name already exists"); return; }
+    if(!isNew && name !== originalName && findManager(name)){ showToast("Another manager already has that name"); return; }
+    var newManager = { name:name, employeeId:document.getElementById("g_empId").value.trim(), designation:document.getElementById("g_designation").value, department:document.getElementById("g_department").value, status:document.getElementById("g_status").value };
+    if(isNew){
+      state.managers.push(newManager);
+      logActivity("Admin","Admin","Manager Added","Manager Master",newManager.name,"-",newManager.designation||"Added");
+    } else {
+      var idx = state.managers.findIndex(function(m){ return m.name===originalName; });
+      var old = state.managers[idx];
+      if(originalName !== name){
+        state.tasks.forEach(function(t){ if(t.assignedBy===originalName) t.assignedBy=name; });
+        logActivity("Admin","Admin","Manager Renamed","Manager Master", originalName, originalName, name);
+      }
+      if(old.designation!==newManager.designation || old.department!==newManager.department || old.status!==newManager.status) logActivity("Admin","Admin","Manager Edited","Manager Master",name, old.designation||old.status||"-", newManager.designation||newManager.status||"-");
+      state.managers[idx] = newManager;
+    }
+    refreshThenSave(function(){}).then(function(){ closeManagerModal(); renderAll(); showToast("Manager saved"); });
+  }
+  function toggleManagerActive(){
+    var originalName = document.getElementById("g_originalName").value;
+    if(!originalName) return;
+    var idx = state.managers.findIndex(function(m){ return m.name===originalName; });
+    if(idx<0) return;
+    var old = state.managers[idx].status;
+    state.managers[idx].status = old==="Inactive" ? "Active" : "Inactive";
+    logActivity("Admin","Admin","Manager "+(state.managers[idx].status==="Inactive"?"Deactivated":"Reactivated"),"Manager Master",originalName,old,state.managers[idx].status);
+    refreshThenSave(function(){}).then(function(){ closeManagerModal(); renderAll(); showToast("Manager updated"); });
+  }
+  function deleteCurrentManager(){
+    var originalName = document.getElementById("g_originalName").value;
+    if(!originalName) return;
+    var inUse = state.tasks.some(function(t){ return t.assignedBy === originalName; });
+    var msg = inUse ? ('"'+originalName+'" has assigned tasks on record. Delete anyway? Their name stays on those past tasks.') : ('Delete manager "'+originalName+'"?');
+    if(!confirm(msg)) return;
+    state.managers = state.managers.filter(function(m){ return m.name !== originalName; });
+    logActivity("Admin","Admin","Manager Deleted","Manager Master",originalName,"-","Deleted");
+    refreshThenSave(function(){}).then(function(){ closeManagerModal(); renderAll(); showToast("Manager deleted"); });
+  }
+
+  // ================= IMPORT / EXPORT (Excel) =================
+  function importExcelFile(file){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        var wb = XLSX.read(e.target.result, { type:"binary", cellDates:true });
+        var sheetName = wb.SheetNames.find(function(n){ return n.toLowerCase().indexOf("task")!==-1; }) || wb.SheetNames[0];
+        var rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header:1, defval:null });
+        var imported = 0;
+        var maxSr = state.tasks.reduce(function(m,t){ return Math.max(m,t.srNo||0); },0);
+        rows.forEach(function(row){
+          if(typeof row[1] !== "number") return;
+          var assignedDate=row[2], assignedByRaw=row[3], taskItem=row[4], assignedToRaw=row[5], dueDate=row[6], completionRaw=row[7], statusRaw=row[11];
+          if(!taskItem) return;
+          function toDateStr(v){ return v instanceof Date ? toISO(v) : ""; }
+          var status = STATUS.PROGRESS;
+          if(typeof statusRaw==="string" && statusRaw.toLowerCase().indexOf("hold")!==-1) status = STATUS.HOLD;
+          else if(completionRaw || (typeof statusRaw==="number" && statusRaw>=1)) status = STATUS.DONE;
+          if(assignedByRaw && !findManager(assignedByRaw)) state.managers.push({name:assignedByRaw,employeeId:"",designation:"",department:"",status:"Active"});
+          if(assignedToRaw && !findMember(assignedToRaw)) state.members.push({name:assignedToRaw,employeeId:"",designation:"",role:"",department:"",location:"",status:"Active"});
+          maxSr += 1;
+          state.tasks.push({ id:uid("t"), srNo:maxSr, taskItem:taskItem, description:"", assignedBy:assignedByRaw||"", assignedTo:assignedToRaw||"",
+            taskType:(state.taskTypes[0]&&state.taskTypes[0].name)||"", assignedDate:toDateStr(assignedDate), dueDate:toDateStr(dueDate), completionDate:toDateStr(completionRaw),
+            priority:"Medium", status:status, progress: status===STATUS.DONE?100:0, progressUpdates:[], notes:"", createdBy:"Import", createdAt:new Date().toISOString(), lastUpdatedBy:"Import", lastUpdatedDate:new Date().toISOString() });
+          imported++;
+        });
+        logActivity("Import","Member","Bulk Import","Task Register","Import","-",imported+" task(s) imported");
+        refreshThenSave(function(){}).then(function(){ renderAll(); showToast(imported+" task(s) imported"); });
+      }catch(err){ console.error(err); showToast("Could not read that file."); }
+    };
+    reader.readAsBinaryString(file);
+  }
+  function exportExcel(){
+    var header = [null,"Sr.No","ASSIGNED DATE","ASSIGNED BY","TASK / TITLE","ASSIGNED TO","TASK TYPE","DUE DATE","COMPLETION DATE","PRIORITY","STATUS","PROGRESS","REMARKS"];
+    var body = state.tasks.slice().sort(function(a,b){ return a.srNo-b.srNo; }).map(function(t){
+      return [null,t.srNo, t.assignedDate?parseISO(t.assignedDate):null, t.assignedBy, t.taskItem, t.assignedTo, t.taskType,
+        t.dueDate?parseISO(t.dueDate):null, t.completionDate?parseISO(t.completionDate):null, t.priority, statusLabelClass(t).label, (t.progress||0)+"%", t.notes];
+    });
+    var ws = XLSX.utils.aoa_to_sheet([header].concat(body));
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Task Register");
+    XLSX.writeFile(wb, "Performance_Dashboard_Export.xlsx");
+  }
+
+  // ================= BACKUP / RESTORE =================
+  function performBackup(){
+    var dataObj = currentDataSnapshot();
+    var dataStr = JSON.stringify(dataObj);
+    return sha256Hex(dataStr).then(function(checksum){
+      var backup = { app:"Performance Dashboard", backupVersion:1, dataVersion:STORAGE_KEY, createdAt:new Date().toISOString(), checksum:checksum, data:dataObj };
+      var content = JSON.stringify(backup);
+      var now = new Date();
+      var filename = "performance-dashboard-backup-"+now.getFullYear()+"-"+pad2(now.getMonth()+1)+"-"+pad2(now.getDate())+"-"+pad2(now.getHours())+"-"+pad2(now.getMinutes())+".json";
+      return { content:content, filename:filename };
+    });
+  }
+  function downloadBlob(content, filename){
+    var blob = new Blob([content], {type:"application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+  function writeBackupToFolder(filename, content){
+    if(!backupDirHandle) return Promise.resolve(false);
+    return backupDirHandle.getFileHandle(filename, {create:true}).then(function(fh){ return fh.createWritable(); }).then(function(w){ return w.write(content).then(function(){ return w.close(); }); }).then(function(){ return true; }).catch(function(err){ console.error(err); return false; });
+  }
+  function exportBackupNow(){
+    performBackup().then(function(res){
+      var useFolder = state.settings.backupDestination === "folder" && backupDirHandle;
+      (useFolder ? writeBackupToFolder(res.filename, res.content) : Promise.resolve(false)).then(function(wroteToFolder){
+        if(!wroteToFolder) downloadBlob(res.content, res.filename);
+        logActivity("Admin","Admin","Backup Exported","Backup & Restore", res.filename, "-", wroteToFolder?"Saved to folder":"Downloaded");
+        refreshThenSave(function(){}).then(function(){ showToast(wroteToFolder ? "Backup saved to selected folder" : "Backup downloaded"); });
+      });
+    });
+  }
+  function armAutoBackup(){
+    if(autoBackupHandle) clearInterval(autoBackupHandle);
+    var mins = parseInt(state.settings.autoBackupInterval,10);
+    if(mins && backupDirHandle && state.settings.backupDestination==="folder"){
+      autoBackupHandle = setInterval(function(){ exportBackupNow(); }, mins*60000);
+    }
+  }
+  function chooseBackupFolder(){
+    if(!window.showDirectoryPicker){ showToast("Folder access isn't supported in this browser - use Browser Download instead."); return; }
+    window.showDirectoryPicker({ mode:"readwrite" }).then(function(handle){
+      backupDirHandle = handle;
+      document.getElementById("folderStatusNote").textContent = "Folder selected for this session.";
+      logActivity("Admin","Admin","Backup Location Changed","Backup & Restore","Folder","-","Selected");
+      armAutoBackup();
+      refreshThenSave(function(){});
+      showToast("Backup folder selected for this session.");
+    }).catch(function(){ /* user cancelled */ });
+  }
+  function handleImportBackupFile(file){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var parsed;
+      try{ parsed = JSON.parse(e.target.result); }catch(err){ showToast("This file is not valid JSON."); return; }
+      if(!parsed || parsed.app !== "Performance Dashboard" || !parsed.data || !parsed.checksum){ showToast("This doesn't look like a Performance Dashboard backup file."); return; }
+      sha256Hex(JSON.stringify(parsed.data)).then(function(check){
+        if(hasSubtle && check !== parsed.checksum){ showToast("Backup file failed integrity check - it may be corrupted or modified."); return; }
+        requireMasterAdmin(function(){
+          if(!confirm("This will replace all existing application data with the backup created on " + fmtDateTime(parsed.createdAt) + ". Continue?")) return;
+          logActivity("Admin","Admin","Restore Started","Backup & Restore", parsed.createdAt||"-","-","-");
+          performBackup().then(function(safety){
+            downloadBlob(safety.content, safety.filename.replace(".json","-safety-before-restore.json"));
+            try{
+              var d = parsed.data;
+              state.tasks = d.tasks||[];
+              state.members = normalizeMembers(d.members);
+              state.managers = normalizeManagers(d.managers);
+              state.departments = normalizeMasterList(d.departments, state.departments);
+              state.designations = normalizeMasterList(d.designations, state.designations);
+              state.taskTypes = normalizeMasterList(d.taskTypes, state.taskTypes);
+              state.settings = d.settings || state.settings;
+              state.activityLog = d.activityLog || [];
+              state.pins = d.pins || {};
+              state.masterCred = d.masterCred || null;
+              logActivity("Admin","Admin","Restore Completed","Backup & Restore", parsed.createdAt||"-","-","-");
+              saveData().then(function(){ renderAll(); showToast("Backup restored."); });
+            }catch(err){
+              console.error(err);
+              logActivity("Admin","Admin","Restore Failed","Backup & Restore", parsed.createdAt||"-","-",String(err).slice(0,80));
+              refreshThenSave(function(){});
+              showToast("Restore failed - existing data was not changed.");
+            }
+          });
+        });
+      });
+    };
+    reader.readAsText(file);
+  }
+
+  // ================= EVENTS =================
+  function bindEvents(){
+    Array.prototype.forEach.call(document.querySelectorAll("#settingsSubNav button"), function(btn){
+      btn.addEventListener("click", function(){
+        Array.prototype.forEach.call(document.querySelectorAll("#settingsSubNav button"), function(b){ b.classList.remove("active"); });
+        btn.classList.add("active");
+        Array.prototype.forEach.call(document.querySelectorAll(".settings-sub"), function(s){ s.classList.remove("active"); });
+        document.getElementById("sub-"+btn.getAttribute("data-sub")).classList.add("active");
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".tab-btn"), function(btn){
+      btn.addEventListener("click", function(){
+        Array.prototype.forEach.call(document.querySelectorAll(".tab-btn"), function(b){ b.classList.remove("active"); });
+        btn.classList.add("active");
+        Array.prototype.forEach.call(document.querySelectorAll(".view"), function(v){ v.classList.remove("active"); });
+        document.getElementById("view-"+btn.getAttribute("data-view")).classList.add("active");
+        if(btn.getAttribute("data-view")==="admin") renderAdmin();
+      });
+    });
+    document.getElementById("themeToggle").addEventListener("click", function(){ var b=document.body; b.setAttribute("data-theme", b.getAttribute("data-theme")==="dark"?"light":"dark"); renderTrendChart(dashboardTasks()); });
+    document.getElementById("refreshBtn").addEventListener("click", function(){ loadData().then(function(){ renderAll(); showToast("Synced with shared data"); }); });
+    document.getElementById("newTaskBtn").addEventListener("click", function(){ openIdentify(function(){ openModal(null); }); });
+    document.getElementById("modalClose").addEventListener("click", closeModal);
+    document.getElementById("cancelTaskBtn").addEventListener("click", closeModal);
+    document.getElementById("saveTaskBtn").addEventListener("click", saveTaskFromForm);
+    document.getElementById("deleteTaskBtn").addEventListener("click", deleteCurrentTask);
+    document.getElementById("detailsModalClose").addEventListener("click", closeTaskDetails);
+    document.getElementById("detailsCloseBtn").addEventListener("click", closeTaskDetails);
+    document.getElementById("addUpdateBtn").addEventListener("click", submitDetailsUpdate);
+    document.getElementById("detailsModalBack").addEventListener("click", function(e){ if(e.target===this) closeTaskDetails(); });
+    document.getElementById("taskModalBack").addEventListener("click", function(e){ if(e.target===this) closeModal(); });
+
+    document.getElementById("idModalClose").addEventListener("click", closeIdentify);
+    document.getElementById("idCancelBtn").addEventListener("click", closeIdentify);
+    document.getElementById("idContinueBtn").addEventListener("click", submitIdentify);
+    document.getElementById("id_name").addEventListener("change", refreshIdConfirmVisibility);
+    document.getElementById("idModalBack").addEventListener("click", function(e){ if(e.target===this) closeIdentify(); });
+    document.getElementById("id_pin").addEventListener("keydown", function(e){ if(e.key==="Enter") submitIdentify(); });
+    document.getElementById("id_pinConfirm").addEventListener("keydown", function(e){ if(e.key==="Enter") submitIdentify(); });
+
+    document.getElementById("adminUnlockBtn").addEventListener("click", function(){ requireMasterAdmin(function(){}); });
+    document.getElementById("adminLockBtn").addEventListener("click", function(){ masterUnlocked=false; if(adminTimeoutHandle) clearTimeout(adminTimeoutHandle); renderAdmin(); showToast("Settings locked"); });
+    document.getElementById("adminChangeKeyLink").addEventListener("click", function(e){ e.preventDefault(); openMasterKeyModal(function(){}, true); });
+    document.getElementById("mkModalClose").addEventListener("click", closeMasterKeyModal);
+    document.getElementById("mkCancelBtn").addEventListener("click", closeMasterKeyModal);
+    document.getElementById("mkContinueBtn").addEventListener("click", function(){ submitMasterKey(document.getElementById("mkModalTitle").textContent.indexOf("Change")!==-1); });
+    document.getElementById("mkModalBack").addEventListener("click", function(e){ if(e.target===this) closeMasterKeyModal(); });
+    document.getElementById("mk_key").addEventListener("keydown", function(e){ if(e.key==="Enter") submitMasterKey(false); });
+    document.getElementById("delayThresholdInput").addEventListener("change", function(){
+      var v = parseInt(this.value,10); if(!v || v<1) v=15;
+      var old = state.settings.delayThresholdDays;
+      state.settings.delayThresholdDays = v;
+      logActivity("Admin","Admin","Threshold Changed","Task Settings","Delay Threshold", old+" days", v+" days");
+      refreshThenSave(function(){}).then(renderAll);
+    });
+    document.getElementById("resetPinBtn").addEventListener("click", function(){
+      var name = document.getElementById("resetPinMember").value;
+      if(!name){ showToast("Choose a member"); return; }
+      delete state.pins[name];
+      logActivity("Admin","Admin","PIN Reset","Account Security",name,"-","-");
+      refreshThenSave(function(){}).then(function(){ showToast("PIN reset for " + name); });
+    });
+
+    document.getElementById("addMemberBtn").addEventListener("click", function(){ requireMasterAdmin(function(){ openMemberModal(null); }); });
+    document.getElementById("memberModalClose").addEventListener("click", closeMemberModal);
+    document.getElementById("cancelMemberBtn").addEventListener("click", closeMemberModal);
+    document.getElementById("saveMemberBtn").addEventListener("click", saveMemberFromForm);
+    document.getElementById("deleteMemberBtn").addEventListener("click", toggleMemberActive);
+    document.getElementById("memberModalBack").addEventListener("click", function(e){ if(e.target===this) closeMemberModal(); });
+
+    document.getElementById("addManagerBtn").addEventListener("click", function(){ requireMasterAdmin(function(){ openManagerModal(null); }); });
+    document.getElementById("managerModalClose").addEventListener("click", closeManagerModal);
+    document.getElementById("cancelManagerBtn").addEventListener("click", closeManagerModal);
+    document.getElementById("saveManagerBtn").addEventListener("click", saveManagerFromForm);
+    document.getElementById("deactivateManagerBtn").addEventListener("click", toggleManagerActive);
+    document.getElementById("deleteManagerBtn").addEventListener("click", deleteCurrentManager);
+    document.getElementById("managerModalBack").addEventListener("click", function(e){ if(e.target===this) closeManagerModal(); });
+
+    document.getElementById("addDeptBtn").addEventListener("click", function(){ var i=document.getElementById("newDeptInput"); var v=i.value.trim(); if(!v||findInList(state.departments,v)) return; state.departments.push({name:v,status:"Active"}); i.value=""; logActivity("Admin","Admin","Department Added","Department Master",v,"-",v); refreshThenSave(function(){}).then(renderAll); });
+    document.getElementById("addDesigBtn").addEventListener("click", function(){ var i=document.getElementById("newDesigInput"); var v=i.value.trim(); if(!v||findInList(state.designations,v)) return; state.designations.push({name:v,status:"Active"}); i.value=""; logActivity("Admin","Admin","Designation Added","Designation Master",v,"-",v); refreshThenSave(function(){}).then(renderAll); });
+    document.getElementById("addTypeBtn").addEventListener("click", function(){ var i=document.getElementById("newTypeInput"); var v=i.value.trim(); if(!v||findInList(state.taskTypes,v)) return; state.taskTypes.push({name:v,status:"Active"}); i.value=""; logActivity("Admin","Admin","Task Type Added","Task Type Master",v,"-",v); refreshThenSave(function(){}).then(renderAll); });
+
+    document.getElementById("backupDestination").addEventListener("change", function(){
+      var old = state.settings.backupDestination;
+      state.settings.backupDestination = this.value;
+      logActivity("Admin","Admin","Backup Location Changed","Backup & Restore","Destination", old, this.value);
+      armAutoBackup();
+      refreshThenSave(function(){}).then(renderAdmin);
+    });
+    document.getElementById("chooseFolderBtn").addEventListener("click", chooseBackupFolder);
+    document.getElementById("autoBackupInterval").addEventListener("change", function(){
+      var old = state.settings.autoBackupInterval;
+      state.settings.autoBackupInterval = this.value;
+      logActivity("Admin","Admin","Automatic Backup Setting Changed","Backup & Restore","Interval", old, this.value);
+      armAutoBackup();
+      refreshThenSave(function(){});
+    });
+    document.getElementById("exportBackupBtn").addEventListener("click", exportBackupNow);
+    document.getElementById("importEntryBtn").addEventListener("click", function(){ document.getElementById("importBackupFile").click(); });
+    document.getElementById("importBackupFile").addEventListener("change", function(e){ if(e.target.files&&e.target.files[0]) handleImportBackupFile(e.target.files[0]); e.target.value=""; });
+
+    ["fx_assignedBy","fx_assignedTo","fx_month","fx_year","fx_status","fx_type","fx_priority"].forEach(function(id){ document.getElementById(id).addEventListener("change", renderDashboard); });
+    document.getElementById("fx_clear").addEventListener("click", function(){ ["fx_assignedBy","fx_assignedTo","fx_month","fx_year","fx_status","fx_type","fx_priority"].forEach(function(id){ document.getElementById(id).value=""; }); renderDashboard(); });
+
+    ["rx_status","rx_assignedBy","rx_assignedTo","rx_type","rx_priority","rx_month","rx_year","rx_assignedFrom","rx_dueFrom"].forEach(function(id){ document.getElementById(id).addEventListener("change", renderRegister); });
+    document.getElementById("searchBox").addEventListener("input", renderRegister);
+    document.getElementById("importBtn").addEventListener("click", function(){ document.getElementById("importFile").click(); });
+    document.getElementById("importFile").addEventListener("change", function(e){ if(e.target.files&&e.target.files[0]) importExcelFile(e.target.files[0]); e.target.value=""; });
+    document.getElementById("exportBtn").addEventListener("click", exportExcel);
+    Array.prototype.forEach.call(document.querySelectorAll("table.register thead th[data-sort]"), function(th){
+      th.addEventListener("click", function(){ var key=th.getAttribute("data-sort"); if(state.sortKey===key) state.sortDir = state.sortDir==="asc"?"desc":"asc"; else { state.sortKey=key; state.sortDir="asc"; } renderRegister(); });
+    });
+
+    ["ax_user","ax_action","ax_module","ax_from","ax_to","ax_search"].forEach(function(id){ document.getElementById(id).addEventListener("input", renderActivity); document.getElementById(id).addEventListener("change", renderActivity); });
+    document.getElementById("ax_clear").addEventListener("click", function(){ ["ax_user","ax_action","ax_module","ax_from","ax_to","ax_search"].forEach(function(id){ document.getElementById(id).value=""; }); renderActivity(); });
+
+    document.addEventListener("click", armAdminTimeout);
+    document.addEventListener("keydown", armAdminTimeout);
+  }
+
+  // ================= SEED =================
+  function seedIfEmpty(){
+    var seeded = false;
+    if(state.managers.length===0){
+      state.managers = [
+        { name:"Mahender Sir", employeeId:"", designation:"Department Manager", department:"Administration", status:"Active" },
+        { name:"Anand Sir", employeeId:"", designation:"Senior Manager", department:"Administration", status:"Active" }
+      ];
+      seeded = true;
+    }
+    if(state.members.length===0){
+      state.members = ["Shubham","Rajendra Kadve","Arvind Gore","Bablu Bora","Hemendra Nath","Dharmendra Nath","Manisha Gaikwad"].map(function(n){
+        return { name:n, employeeId:"", designation:"", role:"", department:"", location:"", status:"Active" };
+      });
+      seeded = true;
+    }
+    if(state.tasks.length===0){
+      var mk = function(sr,ad,ab,ti,dd,cd,pr,st,no){ return { id:uid("t"), srNo:sr, assignedDate:ad, assignedBy:ab, taskItem:ti, description:no, assignedTo:"Shubham", taskType:"Documentation", dueDate:dd, completionDate:cd, priority:pr, status:st, progress: st===STATUS.DONE?100:0, progressUpdates:[], notes:no, createdBy:"Shubham", createdAt:ad+"T10:00:00.000Z", lastUpdatedBy:"Shubham", lastUpdatedDate:(cd||ad)+"T10:00:00.000Z" }; };
+      state.tasks = [
+        mk(1,"2025-02-25","Mahender Sir","Need Make Panchshil Towers Excel File","2025-03-17","2025-04-01","Medium",STATUS.PROGRESS,"Asking Babulu to get the details of rental person documents; almost ready."),
+        mk(2,"2025-03-11","Anand Sir","Booking System Previous Time & Date Selecting issue","2025-03-31","2025-03-26","High",STATUS.DONE,"Sent mail to Akshay Sir regarding the issue and proposed solution."),
+        mk(3,"2025-03-20","Mahender Sir","Task ReadyMade File","2025-04-09","2025-04-04","Medium",STATUS.DONE,"Collected 3 months of tasks from Admin team."),
+        mk(4,"2025-04-03","Anand Sir","GuestHouse New Consumption File","2025-04-23","2025-04-15","Medium",STATUS.DONE,"Coordinating with Ajay to get the info and details."),
+        mk(5,"2025-04-03","Anand Sir","Make the Guesthouse Visitor Excel File","2025-04-23","2025-04-14","Medium",STATUS.DONE,"Work done."),
+        mk(6,"2025-04-03","Anand Sir","Cab Driver New Excel File Template","2025-04-23","","Low",STATUS.HOLD,"On hold.")
+      ];
+      seeded = true;
+    }
+    return seeded;
+  }
+
+  function init(){
+    bindEvents();
+    if(window.storage && typeof window.storage.get === "function"){
+      loadData().then(function(){ var seeded = seedIfEmpty(); if(seeded) saveData(); renderAll(); });
+    } else {
+      seedIfEmpty(); renderAll();
+      showToast("Shared storage unavailable in this view - running in local preview mode.");
+    }
+  }
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
